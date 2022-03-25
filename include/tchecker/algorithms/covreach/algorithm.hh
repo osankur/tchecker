@@ -84,6 +84,7 @@ public:
 
       if (ts.satisfies(node->state_ptr(), labels)) {
         stats.reachable() = true;
+        node->unsafe() = true;
         break;
       }
 
@@ -167,6 +168,7 @@ public:
       }
       else {
         graph.add_edge(node, next_node, tchecker::graph::subsumption::EDGE_ACTUAL, *t);
+        graph.add_edge(next_node, node, tchecker::graph::subsumption::EDGE_PARENT, *t);
         next_nodes.push_back(next_node);
       }
     }

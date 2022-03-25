@@ -19,9 +19,9 @@ namespace concur19 {
 
 /* node_t */
 
-node_t::node_t(tchecker::refzg::state_sptr_t const & s) : _state(s) {}
+node_t::node_t(tchecker::refzg::state_sptr_t const & s) : _state(s), _unsafe(false) {}
 
-node_t::node_t(tchecker::refzg::const_state_sptr_t const & s) : _state(s) {}
+node_t::node_t(tchecker::refzg::const_state_sptr_t const & s) : _state(s), _unsafe(false) {}
 
 /* node_hash_t */
 

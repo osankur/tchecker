@@ -103,6 +103,7 @@ public:
 enum edge_type_t {
   EDGE_ACTUAL,      /*!< Actual edge */
   EDGE_SUBSUMPTION, /*!< Subsumption edge */
+  EDGE_PARENT       /*!< Parent edge */
 };
 
 /*!
@@ -498,7 +499,17 @@ public:
   */
   void attributes(edge_sptr_t const & e, std::map<std::string, std::string> & m) const
   {
-    m["edge_type"] = (e->edge_type() == tchecker::graph::subsumption::EDGE_ACTUAL ? "actual" : "subsumption");
+    switch(e->edge_type()){
+      case tchecker::graph::subsumption::EDGE_ACTUAL:
+        m["edge_type"] = "actual";
+        break;
+      case tchecker::graph::subsumption::EDGE_SUBSUMPTION:
+        m["edge_type"] = "subsumption";
+        break;
+      case tchecker::graph::subsumption::EDGE_PARENT:
+        m["edge_type"] = "parent";
+        break;
+    }
     attributes(*e, m);
   }
 

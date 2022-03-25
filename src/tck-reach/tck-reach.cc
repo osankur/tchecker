@@ -26,6 +26,7 @@
 
 static struct option long_options[] = {{"algorithm", required_argument, 0, 'a'},
                                        {"certificate", no_argument, 0, 'C'},
+                                       {"cex", no_argument, 0, 'c'},
                                        {"help", no_argument, 0, 'h'},
                                        {"labels", required_argument, 0, 'l'},
                                        {"search-order", no_argument, 0, 's'},
@@ -33,7 +34,7 @@ static struct option long_options[] = {{"algorithm", required_argument, 0, 'a'},
                                        {"table-size", required_argument, 0, 0},
                                        {0, 0, 0, 0}};
 
-static char const * const options = (char *)"a:C:hl:s:";
+static char const * const options = (char *)"a:C:c:hl:s:";
 
 /*!
   \brief Display usage
@@ -47,6 +48,7 @@ void usage(char * progname)
   std::cerr << "          concur19:  reachability algorithm with covering over the local-time zone graph" << std::endl;
   std::cerr << "          covreach:  reachability algorithm with covering over the zone graph" << std::endl;
   std::cerr << "   -C out_file   output a certificate (as a graph) in out_file" << std::endl;
+  std::cerr << "   -c out_file   output reachability trace (if any) in out_file" << std::endl;
   std::cerr << "   -h            help" << std::endl;
   std::cerr << "   -l l1,l2,...  comma-separated list of searched labels" << std::endl;
   std::cerr << "   -s bfs|dfs    search order" << std::endl;
@@ -65,6 +67,7 @@ enum algorithm_t {
 static enum algorithm_t algorithm = ALGO_NONE; /*!< Selected algorithm */
 static bool help = false;                      /*!< Help flag */
 static std::string output_file = "";           /*!< Output file name */
+static std::string cex_output_file = "";           /*!< Output file name */
 static std::string search_order = "bfs";       /*!< Search order */
 static std::string labels = "";                /*!< Searched labels */
 static std::size_t block_size = 10000;         /*!< Size of allocated blocks */
@@ -105,6 +108,9 @@ int parse_command_line(int argc, char * argv[])
         break;
       case 'C':
         output_file = optarg;
+        break;
+      case 'c':
+        cex_output_file = optarg;
         break;
       case 'h':
         help = true;
@@ -228,6 +234,16 @@ void covreach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & s
   if (output_file != "") {
     std::ofstream ofs{output_file};
     tchecker::tck_reach::zg_covreach::dot_output(ofs, *graph, sysdecl->name());
+    ofs.close();
+  }
+
+  if(stats.reachable()){
+    tchecker::tck_reach::zg_covreach::cex_output(std::cout, *graph);
+  }
+  // counterexample (if any)
+  if(stats.reachable() && cex_output_file != ""){
+    std::ofstream ofs{cex_output_file};
+    tchecker::tck_reach::zg_covreach::cex_output(ofs, *graph);
     ofs.close();
   }
 }

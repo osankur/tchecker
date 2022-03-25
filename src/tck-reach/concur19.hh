@@ -71,8 +71,15 @@ public:
   */
   inline tchecker::refzg::state_t const & state() const { return *_state; }
 
+  /*!
+  \brief Accessor
+  \return Reference to the _unsafe field
+  */
+  inline bool & unsafe() { return this->_unsafe; }
+
 private:
   tchecker::refzg::const_state_sptr_t _state; /*!< State of the local-time zone graph */
+  bool _unsafe;
 };
 
 /*!
