@@ -62,7 +62,21 @@ public:
   */
   inline tchecker::zg::state_t const & state() const { return *_state; }
 
+  /*!
+  \brief Accessor
+  \return Reference to the _unsafe field
+  */
+  inline bool & unsafe() { return this->_unsafe; }
+
+  /*!
+  \brief Accessor
+  \return Reference to the _init field
+  */
+  inline bool & initial() { return this->_init; }
+
 private:
+  bool _unsafe;
+  bool _init;
   tchecker::zg::const_state_sptr_t _state; /*!< State of the zone graph */
 };
 
@@ -167,7 +181,6 @@ protected:
    \post attributes of edge e have been added to map m
   */
   virtual void attributes(tchecker::tck_reach::zg_reach::edge_t const & e, std::map<std::string, std::string> & m) const;
-
 private:
   std::shared_ptr<tchecker::zg::zg_t> _zg; /*!< Zone graph */
 };
@@ -180,6 +193,8 @@ private:
  \post graph g with name has been output to os
 */
 std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g, std::string const & name);
+
+std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g);
 
 /*!
  \class algorithm_t

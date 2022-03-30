@@ -15,6 +15,7 @@
 #include "tchecker/algorithms/reach/stats.hh"
 #include "tchecker/basictypes.hh"
 #include "tchecker/waiting/factory.hh"
+#include "tchecker/graph/reachability_graph.hh"
 
 /*!
  \file algorithm.hh
@@ -68,6 +69,7 @@ public:
     ts.initial(sst);
     for (auto && [status, s, t] : sst) {
       auto && [is_new_node, initial_node] = graph.add_node(s);
+      initial_node->initial() = true;
       if (is_new_node)
         waiting->insert(initial_node);
     }
@@ -140,15 +142,19 @@ private:
 
       if (ts.satisfies(node->state_ptr(), labels)) {
         stats.reachable() = true;
+        node->unsafe() = true;        
         break;
       }
 
       ts.next(node->state_ptr(), sst);
       for (auto && [status, s, t] : sst) {
         auto && [is_new_node, next_node] = graph.add_node(s);
-        if (is_new_node)
+        if (is_new_node){
           waiting.insert(next_node);
-        graph.add_edge(node, next_node, *t);
+          graph.add_edge(next_node, node, tchecker::graph::reachability::EDGE_PARENT, *t);
+        }
+        graph.add_edge(node, next_node, tchecker::graph::reachability::EDGE_ACTUAL, *t);
+        
       }
       sst.clear();
     }

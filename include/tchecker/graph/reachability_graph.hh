@@ -33,6 +33,7 @@ namespace reachability {
 // Forward declarations
 template <class NODE, class EDGE> class node_t;
 template <class NODE, class EDGE> class edge_t;
+template <class NODE, class EDGE, class NODE_HASH, class NODE_LE> class graph_t;
 
 /*!
  \brief Type of shared node
@@ -94,6 +95,14 @@ public:
 };
 
 /*!
+ \brief Type of edge
+*/
+enum edge_type_t {
+  EDGE_ACTUAL,      /*!< Actual edge */
+  EDGE_PARENT       /*!< Parent edge */
+};
+
+/*!
  \brief Type of reachability graph edge that inherits from EDGE
  \tparam NODE : type of user node
  \tparam EDGE : type of user edge
@@ -103,7 +112,33 @@ class edge_t : public EDGE,
                public tchecker::graph::directed::edge_t<tchecker::graph::reachability::node_sptr_t<NODE, EDGE>,
                                                         tchecker::graph::reachability::edge_sptr_t<NODE, EDGE>> {
 public:
-  using EDGE::EDGE;
+  /*!
+  \brief Constructor
+  \param edge : type of edge
+  \param args : arguments to a constructor of EDGE
+  */
+  template <class... ARGS>
+  edge_t(enum tchecker::graph::reachability::edge_type_t edge_type, ARGS &&... args) : EDGE(args...), _edge_type(edge_type)
+  {
+  }
+
+private:
+  template <class N, class E, class NODE_HASH, class NODE_LE> friend class tchecker::graph::reachability::graph_t;
+
+  /*!
+   \brief Accessor
+   \return This edge type
+   */
+  enum tchecker::graph::reachability::edge_type_t edge_type() const { return _edge_type; }
+
+  /*!
+   \brief Setter
+   \param edge_type : edge type
+   \post this edge type has been set to edge_type
+  */
+  void set_edge_type(enum tchecker::graph::reachability::edge_type_t edge_type) { _edge_type = edge_type; }
+
+  enum tchecker::graph::reachability::edge_type_t _edge_type; /*!< Edge type */
 };
 
 } // end of namespace reachability
@@ -283,11 +318,20 @@ public:
    \post an instance of EDGE(args) from node n1 to node n2 has been added to the
    graph
    */
-  template <class... ARGS> void add_edge(node_sptr_t const & n1, node_sptr_t const & n2, ARGS &&... args)
+  template <class... ARGS> void add_edge(node_sptr_t const & n1, node_sptr_t const & n2, enum tchecker::graph::reachability::edge_type_t edge_type, ARGS &&... args)
   {
-    edge_sptr_t edge = _edge_pool.construct(args...);
+    edge_sptr_t edge = _edge_pool.construct(edge_type, args...);
     _directed_graph.add_edge(n1, n2, edge);
   }
+
+  /*!
+   \brief Accessor
+   \param edge : an edge
+   \return the type of edge
+   */
+  enum tchecker::graph::reachability::edge_type_t edge_type(edge_sptr_t const & edge) const { return edge->edge_type(); }
+
+
 
   /*!
   \brief Type of node iterator
@@ -367,7 +411,17 @@ public:
    \param m : a map (key, value) of attributes
    \post attributes of edge e have been added to map m
   */
-  void attributes(edge_sptr_t const & e, std::map<std::string, std::string> & m) const { attributes(*e, m); }
+  void attributes(edge_sptr_t const & e, std::map<std::string, std::string> & m) const { 
+    switch(e->edge_type()){
+      case tchecker::graph::reachability::EDGE_ACTUAL:
+        m["edge_type"] = "actual";
+        break;
+      case tchecker::graph::reachability::EDGE_PARENT:
+        m["edge_type"] = "parent";
+        break;
+    }
+    attributes(*e, m);
+  }    
 
 protected:
   /*!
