@@ -403,7 +403,15 @@ public:
    \param m : a map (key, value) of attributes
    \post attributes of node n have been added to map m
   */
-  void attributes(node_sptr_t const & n, std::map<std::string, std::string> & m) const { attributes(*n, m); }
+  void attributes(node_sptr_t const & n, std::map<std::string, std::string> & m) const { 
+    if (n->unsafe()){
+      m["unsafe"] = "true";
+    }
+    if (n->is_initial()){
+      m["initial"] = "true";
+    }
+    attributes(*n, m);
+  }
 
   /*!
    \brief Accessor to edge attributes

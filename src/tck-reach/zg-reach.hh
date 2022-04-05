@@ -70,10 +70,19 @@ public:
 
   /*!
   \brief Accessor
-  \return Reference to the _init field
+  \return 
   */
-  inline bool & initial() { return this->_init; }
+  inline bool is_initial() { 
+    return this->_init; 
+  }
 
+  /*!
+  \brief Accessor
+  \return 
+  */
+  inline bool set_initial(bool i) { 
+    return this->_init = i; 
+  }
 private:
   bool _unsafe;
   bool _init;

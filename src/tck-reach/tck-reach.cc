@@ -174,17 +174,17 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
   for (auto && [key, value] : m)
     std::cout << key << " " << value << std::endl;
 
-  if(stats.reachable()){
-    std::cout << "Counterexample trace:" << std::endl;
-    tchecker::tck_reach::zg_reach::cex_output(std::cout, *graph);
-  }
-
   // graph
   if (output_file != "") {
     std::ofstream ofs{output_file};
     tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
     ofs.close();
   }
+  if(stats.reachable()){
+    std::cout << "Counterexample trace:" << std::endl;
+    tchecker::tck_reach::zg_reach::cex_output(std::cout, *graph);
+  }
+
 }
 
 /*!

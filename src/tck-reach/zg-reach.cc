@@ -20,9 +20,9 @@ namespace zg_reach {
 
 /* node_t */
 
-node_t::node_t(tchecker::zg::state_sptr_t const & s) : _unsafe(false), _state(s) {}
+node_t::node_t(tchecker::zg::state_sptr_t const & s) : _unsafe(false),  _init(false), _state(s) {}
 
-node_t::node_t(tchecker::zg::const_state_sptr_t const & s) : _unsafe(false), _state(s) {}
+node_t::node_t(tchecker::zg::const_state_sptr_t const & s) : _unsafe(false), _init(false), _state(s) {}
 
 /* node_hash_t */
 
@@ -120,6 +120,7 @@ std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::grap
   using edge_sptr_t = tchecker::tck_reach::zg_reach::graph_t::edge_sptr_t;
   node_sptr_t currentNode; //   *g.nodes().begin();
   std::map<std::string, std::string> attr;
+
   for (node_sptr_t const & n : g.nodes()){
     if (n->unsafe()){
       currentNode = n;
@@ -133,18 +134,26 @@ std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::grap
   std::list<edge_sptr_t> trace;
   std::list<node_sptr_t> states;
   states.push_front(currentNode);
-  while(!currentNode->initial()){
+  while(!currentNode->is_initial()){
+    // attr.clear();
+    // g.attributes(currentNode, attr);
+    // tchecker::graph::dot_output_node(os, "", attr);
+
     for (edge_sptr_t const & e : g.outgoing_edges(currentNode)) {
+      // std::cout << "Trying the following edge:\n";
       attr.clear();
       g.attributes(e, attr);
+      // tchecker::graph::dot_output_edge(os, "", "", attr);
+
       if (attr["edge_type"] == "parent"){
         currentNode = g.edge_tgt(e);
         states.push_front(currentNode);
-        trace.push_front(e);
+        trace.push_front(e); 
         break;
       }
     }
   }
+
   attr.clear();
   g.attributes(*states.begin(), attr);
   tchecker::graph::dot_output_node(os, "", attr);
