@@ -14,6 +14,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <list>
 #include <type_traits>
 
 #include "tchecker/basictypes.hh"
@@ -148,6 +149,99 @@ std::ostream & dot_output(std::ostream & os, GRAPH const & g, std::string const 
 
   return os;
 }
+
+template <class GRAPH>
+std::ostream & dot_cex_output(std::ostream & os, GRAPH const & g, std::string const & name)
+{
+  typename GRAPH::node_sptr_t currentNode;
+  std::map<std::string, std::string> attr;
+
+  for (typename GRAPH::node_sptr_t const & n : g.nodes()){
+    if (n->is_unsafe()){
+      currentNode = n;
+      break;
+    }
+  }
+  if (!currentNode->is_unsafe()){
+    os << "No unsafe node in the zone graph\n";
+    return os;
+  }
+  // states[i] ---trace[i]---> states[i+1]
+  std::list<typename GRAPH::edge_sptr_t> trace;
+  std::list<typename GRAPH::node_sptr_t> states;
+  states.push_front(currentNode);
+  while(!currentNode->is_initial()){
+    // attr.clear();
+    // g.attributes(currentNode, attr);
+    // tchecker::graph::dot_output_node(os, "", attr);
+
+    for (typename GRAPH::edge_sptr_t const & e : g.incoming_edges(currentNode)) {
+      // std::cout << "Trying the following edge:\n";
+      attr.clear();
+      g.attributes(e, attr);
+      // tchecker::graph::dot_output_edge(os, "", "", attr);
+
+      if (attr["parent"] == "true"){
+        currentNode = g.edge_src(e);
+        states.push_front(currentNode);
+        trace.push_front(e); 
+        break;
+      }
+    }
+  }
+
+  // output graph
+  tchecker::graph::dot_output_header(os, name);
+
+  // for (auto && [node, id] : nodes_map) {
+  //   attr.clear();
+  //   g.attributes(node, attr);
+  //   tchecker::graph::dot_output_node(os, std::to_string(id), attr);
+  // }
+
+  // for (auto && [src, tgt, edge] : edges_set) {
+  //   attr.clear();
+  //   g.attributes(edge, attr);
+  //   tchecker::graph::dot_output_edge(os, std::to_string(src), std::to_string(tgt), attr);
+  // }
+
+
+  int i = 0;
+  for(auto node : states){
+    attr.clear();
+    g.attributes(node, attr);
+    tchecker::graph::dot_output_node(os, std::to_string(i), attr);
+    i++;
+  }
+
+
+  i = 0;  
+  for(auto edge : trace){
+    attr.clear();
+    g.attributes(edge, attr);
+    tchecker::graph::dot_output_edge(os, std::to_string(i), std::to_string(i+1), attr);
+    i++;
+  }
+  tchecker::graph::dot_output_footer(os);
+
+  // auto stateIt = states.begin();
+  // stateIt++;
+  // auto edgeIt = trace.begin();
+  // while( stateIt != states.end() && edgeIt != trace.end()){
+  //   attr.clear();
+  //   g.attributes(*edgeIt, attr);
+  //   tchecker::graph::dot_output_edge(os, "", "", attr);
+
+  //   attr.clear();
+  //   g.attributes(*stateIt, attr);
+  //   tchecker::graph::dot_output_node(os, "", attr);
+    
+  //   stateIt++;
+  //   edgeIt++;
+  // }
+  return os;
+}
+
 
 } // end of namespace graph
 

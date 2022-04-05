@@ -10,7 +10,6 @@
 #include "tchecker/algorithms/search_order.hh"
 #include "tchecker/ta/state.hh"
 #include "zg-covreach.hh"
-#include <list>
 
 namespace tchecker {
 
@@ -20,9 +19,9 @@ namespace zg_covreach {
 
 /* node_t */
 
-node_t::node_t(tchecker::zg::state_sptr_t const & s) : _state(s), _unsafe(false) {}
+node_t::node_t(tchecker::zg::state_sptr_t const & s) : _state(s) {}
 
-node_t::node_t(tchecker::zg::const_state_sptr_t const & s) : _state(s), _unsafe(false) {}
+node_t::node_t(tchecker::zg::const_state_sptr_t const & s) : _state(s) {}
 
 /* node_hash_t */
 
@@ -121,60 +120,6 @@ std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_covreach::g
                                                   tchecker::tck_reach::zg_covreach::node_lexical_less_t,
                                                   tchecker::tck_reach::zg_covreach::edge_lexical_less_t>(os, g, name);
 }
-std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_covreach::graph_t const & g){
-  using node_sptr_t = tchecker::tck_reach::zg_covreach::graph_t::node_sptr_t;
-  using edge_sptr_t = tchecker::tck_reach::zg_covreach::graph_t::edge_sptr_t;
-  node_sptr_t currentNode; //   *g.nodes().begin();
-  std::map<std::string, std::string> attr;
-  for (node_sptr_t const & n : g.nodes()){
-    if (n->unsafe()){
-      currentNode = n;
-      break;
-    }
-  }
-  if (!currentNode->unsafe()){
-    os << "Could not find unsafe node in the zone graph\n";
-    return os;
-  }
-  std::list<edge_sptr_t> trace;
-  std::list<node_sptr_t> states;
-  states.push_front(currentNode);
-  bool is_root = false;
-  while(!is_root){
-    is_root = true;
-    for (edge_sptr_t const & e : g.outgoing_edges(currentNode)) {
-      attr.clear();
-      g.attributes(e, attr);
-      if (attr["edge_type"] == "parent"){
-        currentNode = g.edge_tgt(e);
-        states.push_front(currentNode);
-        trace.push_front(e);
-        is_root = false;
-        break;
-      }
-    }
-  }
-  attr.clear();
-  g.attributes(*states.begin(), attr);
-  tchecker::graph::dot_output_node(os, "", attr);
-  auto stateIt = states.begin();
-  stateIt++;
-  auto edgeIt = trace.begin();
-  while( stateIt != states.end() && edgeIt != trace.end()){
-    attr.clear();
-    g.attributes(*edgeIt, attr);
-    tchecker::graph::dot_output_edge(os, "", "", attr);
-
-    attr.clear();
-    g.attributes(*stateIt, attr);
-    tchecker::graph::dot_output_node(os, "", attr);
-    
-    stateIt++;
-    edgeIt++;
-  }
-  return os;
-}
-
 
 /* run */
 

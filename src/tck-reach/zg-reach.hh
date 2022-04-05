@@ -64,25 +64,28 @@ public:
 
   /*!
   \brief Accessor
-  \return Reference to the _unsafe field
+  \return Whether the node is unsafe
   */
-  inline bool & unsafe() { return this->_unsafe; }
+  inline bool is_unsafe() { return this->_unsafe; }
+
+  /*!
+  \brief Set unsafe value of the node
+  */
+  inline void set_unsafe(bool unsafe) { this->_unsafe = unsafe; }
+
 
   /*!
   \brief Accessor
   \return 
   */
-  inline bool is_initial() { 
-    return this->_init; 
-  }
+  inline bool is_initial() { return this->_init; }
 
   /*!
-  \brief Accessor
-  \return 
+  \brief Set initial value of the node
   */
-  inline bool set_initial(bool i) { 
-    return this->_init = i; 
-  }
+  inline void set_initial(bool init) { this->_init = init; }
+
+
 private:
   bool _unsafe;
   bool _init;
@@ -203,7 +206,15 @@ private:
 */
 std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g, std::string const & name);
 
-std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g);
+
+/*!
+ \brief Counterexample output
+ \param os : output stream
+ \param g : graph
+ \param name : graph name
+ \post The counterexample trace from an initial node to an unsafe node in graph g with name has been output to os
+*/
+std::ostream & dot_cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g, std::string const & name);
 
 /*!
  \class algorithm_t

@@ -98,8 +98,8 @@ public:
  \brief Type of edge
 */
 enum edge_type_t {
-  EDGE_ACTUAL,      /*!< Actual edge */
-  EDGE_PARENT       /*!< Parent edge */
+  EDGE_REGULAR,      /*!< Regular edge */
+  EDGE_PARENT        /*!< Parent edge */
 };
 
 /*!
@@ -404,7 +404,7 @@ public:
    \post attributes of node n have been added to map m
   */
   void attributes(node_sptr_t const & n, std::map<std::string, std::string> & m) const { 
-    if (n->unsafe()){
+    if (n->is_unsafe()){
       m["unsafe"] = "true";
     }
     if (n->is_initial()){
@@ -421,11 +421,10 @@ public:
   */
   void attributes(edge_sptr_t const & e, std::map<std::string, std::string> & m) const { 
     switch(e->edge_type()){
-      case tchecker::graph::reachability::EDGE_ACTUAL:
-        m["edge_type"] = "actual";
-        break;
       case tchecker::graph::reachability::EDGE_PARENT:
-        m["edge_type"] = "parent";
+        m["parent"] = "true";
+        break;
+      case tchecker::graph::reachability::EDGE_REGULAR:
         break;
     }
     attributes(*e, m);
@@ -505,6 +504,13 @@ std::ostream & dot_output(std::ostream & os, GRAPH const & g, std::string const 
 {
   return tchecker::graph::dot_output<GRAPH, NODE_LE, EDGE_LE>(os, g, name);
 }
+
+template <class GRAPH>
+std::ostream & dot_cex_output(std::ostream & os, GRAPH const & g, std::string const & name)
+{
+  return tchecker::graph::dot_cex_output<GRAPH>(os, g, name);
+}
+
 
 } // end of namespace reachability
 

@@ -60,15 +60,8 @@ public:
   */
   inline tchecker::zg::state_t const & state() const { return *_state; }
 
-  /*!
-  \brief Accessor
-  \return Reference to the _unsafe field
-  */
-  inline bool & unsafe() { return this->_unsafe; }
-
 private:
   tchecker::zg::const_state_sptr_t _state; /*!< State of the zone graph */
-  bool _unsafe; /*!< Whether this node satisfies the reachability target */
 };
 
 /*!
@@ -188,15 +181,6 @@ private:
  \post graph g with name has been output to os
 */
 std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_covreach::graph_t const & g, std::string const & name);
-
-/*!
- \brief Counterexample trace output
- \param os : output stream
- \param g : graph
- \param name : graph name
- \post Countereaxmple trace found in g has been output to os
-*/
-std::ostream & cex_output(std::ostream & os, tchecker::tck_reach::zg_covreach::graph_t const & g);
 
 /*!
  \class algorithm_t

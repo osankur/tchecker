@@ -177,14 +177,13 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
   // graph
   if (output_file != "") {
     std::ofstream ofs{output_file};
-    tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
+    if(stats.reachable()){
+      tchecker::tck_reach::zg_reach::dot_cex_output(ofs, *graph, sysdecl->name());
+    } else {
+      tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
+    }
     ofs.close();
   }
-  if(stats.reachable()){
-    std::cout << "Counterexample trace:" << std::endl;
-    tchecker::tck_reach::zg_reach::cex_output(std::cout, *graph);
-  }
-
 }
 
 /*!
@@ -238,16 +237,6 @@ void covreach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & s
     tchecker::tck_reach::zg_covreach::dot_output(ofs, *graph, sysdecl->name());
     ofs.close();
   }
-
-  if(stats.reachable()){
-    tchecker::tck_reach::zg_covreach::cex_output(std::cout, *graph);
-  }
-  // // counterexample (if any)
-  // if(stats.reachable() && cex_output_file != ""){
-  //   std::ofstream ofs{cex_output_file};
-  //   tchecker::tck_reach::zg_covreach::cex_output(ofs, *graph);
-  //   ofs.close();
-  // }
 }
 
 /*!

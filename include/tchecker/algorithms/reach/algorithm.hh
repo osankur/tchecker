@@ -142,7 +142,7 @@ private:
 
       if (ts.satisfies(node->state_ptr(), labels)) {
         stats.reachable() = true;
-        node->unsafe() = true;        
+        node->set_unsafe(true);
         break;
       }
 
@@ -151,10 +151,10 @@ private:
         auto && [is_new_node, next_node] = graph.add_node(s);
         if (is_new_node){
           waiting.insert(next_node);
-          graph.add_edge(next_node, node, tchecker::graph::reachability::EDGE_PARENT, *t);
-        }
-        graph.add_edge(node, next_node, tchecker::graph::reachability::EDGE_ACTUAL, *t);
-        
+          graph.add_edge(node, next_node, tchecker::graph::reachability::EDGE_PARENT, *t);
+        } else {
+          graph.add_edge(node, next_node, tchecker::graph::reachability::EDGE_REGULAR, *t);
+        }        
       }
       sst.clear();
     }
