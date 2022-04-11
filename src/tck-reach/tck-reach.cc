@@ -26,7 +26,6 @@
 
 static struct option long_options[] = {{"algorithm", required_argument, 0, 'a'},
                                        {"certificate", no_argument, 0, 'C'},
-                                       // {"cex", no_argument, 0, 'c'},
                                        {"help", no_argument, 0, 'h'},
                                        {"labels", required_argument, 0, 'l'},
                                        {"search-order", no_argument, 0, 's'},
@@ -179,6 +178,7 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
     std::ofstream ofs{output_file};
     if(stats.reachable()){
       tchecker::tck_reach::zg_reach::dot_cex_output(ofs, *graph, sysdecl->name());
+      tchecker::tck_reach::zg_reach::dot_cex_output(std::cout`, *graph, sysdecl->name());
     } else {
       tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
     }
