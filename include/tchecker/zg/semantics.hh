@@ -65,6 +65,28 @@ public:
                                         tchecker::clock_constraint_container_t const & guard,
                                         tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
                                         tchecker::clock_constraint_container_t const & tgt_invariant) = 0;
+
+  /*!
+  \brief Compute previous zone
+  \param dbm : a DBM
+  \param dim : dimension of dbm
+  \param src_delay_allowed : true if delay allowed in source state
+  \param src_invariant : invariant in source state
+  \param guard : transition guard
+  \param clkreset : transition reset
+  \param tgt_delay_allowed : true if delay allowed in target state
+  \param tgt_invariant : invariant in target state
+  \post dbm has been updated to its weakeast precondition w.r.t. src_delay_allowed,
+  src_invariant, guard, clkreset, tgt_delay_allowed and tgt_invariant
+  \return STATE_OK if the resulting dbm is not empty, other values if the resulting
+  dbm is empty (see details in implementations)
+   */
+  virtual tchecker::state_status_t previous(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & src_invariant,
+                                        tchecker::clock_constraint_container_t const & guard,
+                                        tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & tgt_invariant) = 0;
+
 };
 
 /*!
@@ -118,6 +140,13 @@ public:
                                         tchecker::clock_constraint_container_t const & guard,
                                         tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
                                         tchecker::clock_constraint_container_t const & tgt_invariant);
+
+  tchecker::state_status_t previous(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & src_invariant,
+                                        tchecker::clock_constraint_container_t const & guard,
+                                        tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & tgt_invariant);
+
 };
 
 /*!
@@ -169,6 +198,12 @@ public:
   tgt_invariant result in an empty zone
   */
   virtual tchecker::state_status_t next(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & src_invariant,
+                                        tchecker::clock_constraint_container_t const & guard,
+                                        tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
+                                        tchecker::clock_constraint_container_t const & tgt_invariant);
+
+  tchecker::state_status_t previous(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
                                         tchecker::clock_constraint_container_t const & src_invariant,
                                         tchecker::clock_constraint_container_t const & guard,
                                         tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,

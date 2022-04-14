@@ -49,6 +49,28 @@ tchecker::state_status_t standard_semantics_t::next(tchecker::dbm::db_t * dbm, t
   return tchecker::STATE_OK;
 }
 
+tchecker::state_status_t standard_semantics_t::previous(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
+                                                    tchecker::clock_constraint_container_t const & src_invariant,
+                                                    tchecker::clock_constraint_container_t const & guard,
+                                                    tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
+                                                    tchecker::clock_constraint_container_t const & tgt_invariant)
+{
+  for (auto c : clkreset){
+    tchecker::dbm::free(dbm, dim, c.left_id());
+  }
+  if (tchecker::dbm::constrain(dbm, dim, guard) == tchecker::dbm::EMPTY)
+    return tchecker::STATE_CLOCKS_GUARD_VIOLATED;
+
+  if (tchecker::dbm::constrain(dbm, dim, src_invariant) == tchecker::dbm::EMPTY)
+    return tchecker::STATE_CLOCKS_SRC_INVARIANT_VIOLATED;
+  if (src_delay_allowed) {
+    tchecker::dbm::open_down(dbm, dim);
+  }
+  return tchecker::STATE_OK;
+}
+
+
+
 /* elapsed_semantics_t */
 
 tchecker::state_status_t elapsed_semantics_t::initial(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool delay_allowed,
@@ -95,6 +117,35 @@ tchecker::state_status_t elapsed_semantics_t::next(tchecker::dbm::db_t * dbm, tc
 
   return tchecker::STATE_OK;
 }
+
+tchecker::state_status_t elapsed_semantics_t::previous(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, bool src_delay_allowed,
+                                                    tchecker::clock_constraint_container_t const & src_invariant,
+                                                    tchecker::clock_constraint_container_t const & guard,
+                                                    tchecker::clock_reset_container_t const & clkreset, bool tgt_delay_allowed,
+                                                    tchecker::clock_constraint_container_t const & tgt_invariant)
+{
+  if (tchecker::dbm::constrain(dbm, dim, tgt_invariant) == tchecker::dbm::EMPTY)
+    return tchecker::STATE_CLOCKS_TGT_INVARIANT_VIOLATED;
+
+  if (tgt_delay_allowed) {
+    tchecker::dbm::open_down(dbm, dim);
+  }
+
+  for (auto c : clkreset){
+    tchecker::dbm::free(dbm, dim, c.left_id());
+  }
+
+  if (tchecker::dbm::constrain(dbm, dim, guard) == tchecker::dbm::EMPTY)
+    return tchecker::STATE_CLOCKS_GUARD_VIOLATED;
+
+  if (tchecker::dbm::constrain(dbm, dim, src_invariant) == tchecker::dbm::EMPTY)
+    return tchecker::STATE_CLOCKS_SRC_INVARIANT_VIOLATED;
+
+  return tchecker::STATE_OK;
+}
+
+
+
 
 /* factory */
 
