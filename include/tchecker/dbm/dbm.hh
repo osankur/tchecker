@@ -304,6 +304,7 @@ bool is_le(tchecker::dbm::db_t const * dbm1, tchecker::dbm::db_t const * dbm2, t
 void reset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
            tchecker::integer_t value);
 
+
 /*!
  \brief Reset from a clock reset container
  \param dbm : a dbm
@@ -385,6 +386,27 @@ void reset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker:
                   tchecker::integer_t value);
 
 /*!
+ \brief Free a clock
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= y < dim (checked by assertion)
+ 0 <= value (checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t (checked by assertion)
+ \post dbm has been updated by removing all constraints from x
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ */
+void free(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x);
+
+
+/*!
  \brief Open up (delay)
  \param dbm : a dbm
  \param dim : dimension of dbm
@@ -397,6 +419,21 @@ void reset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker:
  dbm is tight.
  */
 void open_up(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
+
+
+/*!
+ \brief Open down (delay)
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ \post all lower bounds on clocks in dbm are 0.
+ dbm is tight.
+ */
+void open_down(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
 
 /*!
  \brief Intersection
@@ -601,6 +638,22 @@ std::ostream & output(std::ostream & os, tchecker::dbm::db_t const * dbm, tcheck
  */
 int lexical_cmp(tchecker::dbm::db_t const * dbm1, tchecker::clock_id_t dim1, tchecker::dbm::db_t const * dbm2,
                 tchecker::clock_id_t dim2);
+
+/*!
+ \brief Constrains the dbm to a single valuation that belongs to the given dbm, possibly after scaling it by factor.
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param factor : constant by which the dbm was scaled.
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ factor = 1.
+ \post dbm was scaled by factor and represents a single valuation.
+ */
+
+void pick_valuation(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, int & factor);
 
 } // end of namespace dbm
 

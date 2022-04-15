@@ -119,6 +119,84 @@ std::ostream & dot_cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::
   return tchecker::graph::reachability::dot_cex_output<tchecker::tck_reach::zg_reach::graph_t>(os, g, name);
 }
 
+
+
+/**
+ * @brief Find a path from an initial state to an unsafe state and add concrete valuations that form a run as attributes
+ *        states[i] ---trace[i]---> states[i+1]
+ * @pre Graph g contains a path from an initial state to an unsafe state
+ * @pre edges and states point to empty lists
+ * @param g 
+ * @param edges
+ * @param states
+ * @post The states traversed by an error trace have been written to states;
+ *  the edges used written to edges, and a sequence of clock valuations to clock_valuations.
+ */
+void generate_concrete_trace(tchecker::tck_reach::zg_reach::graph_t const & g,
+      tchecker::zg::zg_t const & zg,
+      std::shared_ptr<std::list<tchecker::tck_reach::zg_reach::graph_t::node_sptr_t>> & states,
+      std::shared_ptr<std::list<tchecker::tck_reach::zg_reach::graph_t::edge_sptr_t>> & edges,
+      std::shared_ptr<std::list<std::vector<double>>> & clock_valuations
+    ){
+  using node_sptr_t = tchecker::tck_reach::zg_reach::graph_t::node_sptr_t;
+  using edge_sptr_t = tchecker::tck_reach::zg_reach::graph_t::edge_sptr_t;
+  assert(edges->empty());
+  assert(states->empty());
+  assert(clock_valuations->empty());
+  node_sptr_t currentNode;
+  std::map<std::string, std::string> attr;
+  std::vector<double> val;
+
+  for (node_sptr_t const & n : g.nodes()){
+    if (n->is_unsafe()){
+      currentNode = n;
+      break;
+    }
+  }
+  if (!currentNode->is_unsafe()){
+    throw std::runtime_error("No unsafe node in the zone graph\n");
+  }
+
+  tchecker::clock_id_t dim = currentNode->state().zone().dim();
+  tchecker::dbm::db_t * d = new tchecker::dbm::db_t[dim];
+  int factor = 1;
+
+  currentNode->state().zone().to_dbm(d);
+  tchecker::dbm::pick_valuation(d, dim, factor);
+  val.clear();
+  for(tchecker::clock_id_t c = 0; c < dim; c++){
+    val.push_back(tchecker::dbm::value(d[c]) / (double) factor);
+  }
+  clock_valuations->push_front(val);
+
+  while(!currentNode->is_initial()){
+    
+    // attr.clear();
+    // g.attributes(currentNode, attr);
+    // tchecker::graph::dot_output_node(os, "", attr);
+
+    for (edge_sptr_t const & e : g.incoming_edges(currentNode)) {
+      // std::cout << "Trying the following edge:\n";
+      attr.clear();
+      g.attributes(e, attr);
+      // tchecker::graph::dot_output_edge(os, "", "", attr);
+
+      if (attr["parent"] == "true"){
+        currentNode = g.edge_src(e);
+        states->push_front(currentNode);
+        edges->push_front(e); 
+
+        // TODO Create a DBM out of the integer valuation (obtained by * factor)
+        // TODO Compute predecessor along the parent edge
+        // TODO pick_valuation again ....
+        // Add this valuation as an attribute
+        break;
+      }
+    }
+  }
+  delete [] d;
+}
+
 /* run */
 
 std::tuple<tchecker::algorithms::reach::stats_t, std::shared_ptr<tchecker::tck_reach::zg_reach::graph_t>>
@@ -140,6 +218,12 @@ run(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysdecl, st
   enum tchecker::waiting::policy_t policy = tchecker::algorithms::waiting_policy(search_order);
 
   tchecker::algorithms::reach::stats_t stats = algorithm.run(*zg, *graph, accepting_labels, policy);
+  if(stats.reachable()){
+    auto edges = std::make_shared<std::list<tchecker::tck_reach::zg_reach::graph_t::edge_sptr_t>>();
+    auto states = std::make_shared<std::list<tchecker::tck_reach::zg_reach::graph_t::node_sptr_t>>();
+    auto clock_valuations = std::make_shared<std::list<std::vector<double>>>();
+    generate_concrete_trace(*graph, *zg, states, edges, clock_valuations);
+  }
 
   return std::make_tuple(stats, graph);
 }

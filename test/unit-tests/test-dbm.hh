@@ -1518,6 +1518,52 @@ TEST_CASE("Extrapolations boundary case on M/U bounds", "[dbm]")
   }
 }
 
+TEST_CASE("Picking valuation", "[dbm]")
+{
+  SECTION("strict large bounds 1")
+  {
+    tchecker::clock_id_t dim = 3;
+    tchecker::dbm::db_t dbm[dim * dim];
+    DBM(0, 0) = tchecker::dbm::LE_ZERO;
+    DBM(0, 1) = tchecker::dbm::db(tchecker::dbm::LT, 0); // x1>0
+    DBM(0, 2) = tchecker::dbm::LE_ZERO;                  // x2>=0
+    DBM(1, 0) = tchecker::dbm::LT_INFINITY;              // x1<infinity
+    DBM(1, 1) = tchecker::dbm::LE_ZERO;
+    DBM(1, 2) = tchecker::dbm::db(tchecker::dbm::LE, 3); // x1-x2<=3
+    DBM(2, 0) = tchecker::dbm::db(tchecker::dbm::LT, 7); // x2<7
+    DBM(2, 1) = tchecker::dbm::LT_INFINITY;              // x2-x1<infinity
+    DBM(2, 2) = tchecker::dbm::LE_ZERO;
+    tchecker::dbm::tighten(dbm, dim);
+    int factor = 1;
+    tchecker::dbm::pick_valuation(dbm, dim, factor);    
+    REQUIRE(tchecker::dbm::value(DBM(1,0)) == 1);
+    REQUIRE(tchecker::dbm::value(DBM(0,1)) == -1);
+    REQUIRE(tchecker::dbm::value(DBM(2,0)) == 0);
+    REQUIRE(tchecker::dbm::value(DBM(0,2)) == 0);
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+  }
+  SECTION("strict large bounds with factor")
+  {
+    tchecker::clock_id_t dim = 3;
+    tchecker::dbm::db_t dbm[dim * dim];
+    tchecker::dbm::universal_positive(dbm,dim);
+    DBM(0, 1) = tchecker::dbm::db(tchecker::dbm::LT, 0); // x1>0
+    DBM(0, 2) = tchecker::dbm::LT_ZERO;                  // x2>0
+    DBM(1, 0) = tchecker::dbm::db(tchecker::dbm::LE, 3); // x1<=3
+    DBM(2, 0) = tchecker::dbm::db(tchecker::dbm::LT, 1); // x2<1
+    tchecker::dbm::tighten(dbm, dim);
+    int factor = 1;
+    tchecker::dbm::pick_valuation(dbm, dim, factor);
+    REQUIRE(tchecker::dbm::value(DBM(1,0)) == 30);
+    REQUIRE(tchecker::dbm::value(DBM(0,1)) == -30);
+    REQUIRE(tchecker::dbm::value(DBM(2,0)) == 1);
+    REQUIRE(tchecker::dbm::value(DBM(0,2)) == -1);
+    REQUIRE(factor == 10);
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+  }
+
+}
+
 TEST_CASE("Zone inclusion w.r.t. abstraction aM (1)", "[dbm]")
 {
   tchecker::clock_id_t const dim = 3;

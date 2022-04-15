@@ -170,7 +170,11 @@ std::ostream & dot_cex_output(std::ostream & os, GRAPH const & g, std::string co
   std::list<typename GRAPH::edge_sptr_t> trace;
   std::list<typename GRAPH::node_sptr_t> states;
   states.push_front(currentNode);
+  // pick_valuation(currentNode->zone(), valuation, factor)
+  // add it as attribute to currentNode
+  // (or add it in a separate parallel list)
   while(!currentNode->is_initial()){
+    
     // attr.clear();
     // g.attributes(currentNode, attr);
     // tchecker::graph::dot_output_node(os, "", attr);
@@ -185,6 +189,9 @@ std::ostream & dot_cex_output(std::ostream & os, GRAPH const & g, std::string co
         currentNode = g.edge_src(e);
         states.push_front(currentNode);
         trace.push_front(e); 
+        // TODO Create a DBM out of the integer valuation (obtained by * factor)
+        // TODO Compute predecessor along the parent edge
+        // TODO pick_valuation again ....
         break;
       }
     }
