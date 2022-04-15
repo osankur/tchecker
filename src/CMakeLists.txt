@@ -95,8 +95,13 @@ target_link_libraries(tck-syntax libtchecker_static)
 set_property(TARGET tck-syntax PROPERTY CXX_STANDARD 17)
 set_property(TARGET tck-syntax PROPERTY CXX_STANDARD_REQUIRED ON)
 
-
-add_executable(tck-convert ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/tck-convert.cc)
+# Build tck-convert executable
+add_executable(tck-convert 
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/graph.hh
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/smv.hh
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/interpolant.hh
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/graph.cc
+	       ${CMAKE_CURRENT_SOURCE_DIR}/tck-convert/tck-convert.cc)
 target_link_libraries(tck-convert libtchecker_static)
 set_property(TARGET tck-convert PROPERTY CXX_STANDARD 17)
 set_property(TARGET tck-convert PROPERTY CXX_STANDARD_REQUIRED ON)

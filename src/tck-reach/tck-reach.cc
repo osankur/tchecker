@@ -33,7 +33,7 @@ static struct option long_options[] = {{"algorithm", required_argument, 0, 'a'},
                                        {"table-size", required_argument, 0, 0},
                                        {0, 0, 0, 0}};
 
-static char const * const options = (char *)"a:C:c:hl:s:";
+static char const * const options = (char *)"a:C:hl:s:";
 
 /*!
   \brief Display usage
@@ -178,7 +178,7 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
     std::ofstream ofs{output_file};
     if(stats.reachable()){
       tchecker::tck_reach::zg_reach::dot_cex_output(ofs, *graph, sysdecl->name());
-      tchecker::tck_reach::zg_reach::dot_cex_output(std::cout`, *graph, sysdecl->name());
+      tchecker::tck_reach::zg_reach::dot_cex_output(std::cout, *graph, sysdecl->name());
     } else {
       tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
     }

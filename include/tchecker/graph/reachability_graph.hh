@@ -605,9 +605,9 @@ public:
    \post an instance of EDGE(args) from node n1 to node n2 has been added to the
    tree
    */
-  template <class... ARGS> void add_edge(node_sptr_t const & n1, node_sptr_t const & n2, ARGS &&... args)
+  template <class... ARGS> void add_edge(node_sptr_t const & n1, node_sptr_t const & n2, tchecker::graph::reachability::edge_type_t edge_type, ARGS &&... args)
   {
-    edge_sptr_t edge = _edge_pool.construct(args...);
+    edge_sptr_t edge = _edge_pool.construct(edge_type, args...);
     _directed_graph.add_edge(n1, n2, edge);
   }
 

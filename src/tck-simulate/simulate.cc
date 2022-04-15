@@ -127,7 +127,7 @@ std::shared_ptr<tchecker::tck_simulate::graph_t> randomized_simulation(tchecker:
     if (k == tchecker::tck_simulate::NO_SELECTION)
       break;
     tchecker::tck_simulate::graph_t::node_sptr_t node = g->add_node(zg->state(v[k]));
-    g->add_edge(previous_node, node, *zg->transition(v[k]));
+    g->add_edge(previous_node, node, tchecker::graph::reachability::edge_type_t::EDGE_PARENT, *zg->transition(v[k]));
     v.clear();
 
     previous_node = node;
@@ -206,7 +206,7 @@ std::shared_ptr<tchecker::tck_simulate::graph_t> interactive_simulation(tchecker
     if (k == tchecker::tck_simulate::NO_SELECTION)
       break;
     tchecker::tck_simulate::graph_t::node_sptr_t node = g->add_node(zg->state(v[k]));
-    g->add_edge(previous_node, node, *zg->transition(v[k]));
+    g->add_edge(previous_node, node, tchecker::graph::reachability::edge_type_t::EDGE_PARENT, *zg->transition(v[k]));
     v.clear();
 
     previous_node = node;
