@@ -23,27 +23,32 @@
 #include "tchecker/parsing/declaration.hh"
 #include "tchecker/expression/typed_expression.hh"
 #include "tchecker/statement/typed_statement.hh"
-#include "smv.hh"
+
+#include "interpolant.hh"
 
 /*!
- \file tck-convert.cc
+ \file tck-tar.cc
  \brief Syntax checking and translation of systems
  */
 
-static struct option long_options[] = {{"smv", no_argument, 0, 's'},
+static struct option long_options[] = {{"trace", required_argument, 0, 't'},
+                                       {"alphabet", required_argument, 0, 'a'},
                                        {"help", no_argument, 0, 'h'},
                                        {0, 0, 0, 0}};
 
-static char * const options = (char *)"sh";
-
+static char * const options = (char *)"t:a:h";
+static std::string certificate_file = "";
+std::string trace = "";
+std::string alphabet = "";
 void usage(char * progname)
 {
   std::cerr << "Usage: " << progname << " [options] [file]" << std::endl;
-  std::cerr << "   -s          convert to smv" << std::endl;
+  std::cerr << "   -t trace     trace for which interpolant automaton is to be computed if unfeasible" << std::endl;
+  std::cerr << "   -a alphabet  alphabet on which the interpolant automaton is to be defined" << std::endl;
   std::cerr << "reads from standard input if file is not provided" << std::endl;
 }
 
-static bool convert_smv = false;
+static bool interpolate = false;
 static bool help = false;
 
 int parse_command_line(int argc, char * argv[])
@@ -60,8 +65,16 @@ int parse_command_line(int argc, char * argv[])
       throw std::runtime_error("Unknown command-line option");
 
     switch (c) {
-    case 's':
-      convert_smv = true;
+    case 't':
+      if (strcmp(optarg, "") == 0)
+        throw std::invalid_argument("Invalid empty trace");
+      interpolate = true;
+      trace = optarg;
+      break;
+    case 'a':
+      if (strcmp(optarg, "") == 0)
+        throw std::invalid_argument("Invalid empty alphabet");
+      alphabet = optarg;
       break;
     case 'h':
       help = true;
@@ -121,8 +134,8 @@ int main(int argc, char * argv[])
     std::shared_ptr<tchecker::parsing::system_declaration_t> sysdecl{load_system(input_file)};
     if (sysdecl.get() == nullptr)
       return EXIT_FAILURE;
-    if (convert_smv){
-      tchecker::tck_convert::output_smv(sysdecl, std::cout);
+    if (interpolate){
+      tchecker::tck_tar::compute_interpolant_automaton(sysdecl, trace, alphabet, std::cout);
     }
   }
   catch (std::exception & e) {
