@@ -66,7 +66,6 @@ public:
     // tchecker::make_range<tchecker::syncprod::outgoing_edges_iterator_t, tchecker::end_iterator_t>();
     //tchecker::zg::outgoing_edges_value_t edges = tchecker::make_range<tchecker::syncprod::edges_iterator_t>(t->vedge().begin(), t->vedge().end());
     //outgoing_edges_range_t edges_range = tchecker::make_range<tchecker::syncprod::outgoing_edges_iterator_t, tchecker::end_iterator_t>(t->vedge().begin(), t->vedge().end());
-
     // tchecker::zg::outgoing_edges_value_t edges = tchecker::make_range<tchecker::syncprod::edges_iterator_t>(t->vedge().begin(), t->vedge().end());
     // tchecker::state_status_t status = tchecker::zg::next(*this->_system, *nexts, *nextt, *this->_semantics, *this->_extrapolation, edges);
     // return std::make_tuple(status, nexts, nextt);

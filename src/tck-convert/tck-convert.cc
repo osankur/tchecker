@@ -24,6 +24,7 @@
 #include "tchecker/expression/typed_expression.hh"
 #include "tchecker/statement/typed_statement.hh"
 #include "smv.hh"
+#include "complement.hh"
 
 /*!
  \file tck-convert.cc
@@ -31,19 +32,22 @@
  */
 
 static struct option long_options[] = {{"smv", no_argument, 0, 's'},
+                                       {"complement", no_argument, 0, 'c'},
                                        {"help", no_argument, 0, 'h'},
                                        {0, 0, 0, 0}};
 
-static char * const options = (char *)"sh";
+static char * const options = (char *)"csh";
 
 void usage(char * progname)
 {
   std::cerr << "Usage: " << progname << " [options] [file]" << std::endl;
   std::cerr << "   -s          convert to smv" << std::endl;
+  std::cerr << "   -c          complement given deterministic TA" << std::endl;
   std::cerr << "reads from standard input if file is not provided" << std::endl;
 }
 
 static bool convert_smv = false;
+static bool complement = false;
 static bool help = false;
 
 int parse_command_line(int argc, char * argv[])
@@ -62,6 +66,9 @@ int parse_command_line(int argc, char * argv[])
     switch (c) {
     case 's':
       convert_smv = true;
+      break;
+    case 'c':
+      complement = true;
       break;
     case 'h':
       help = true;
@@ -123,6 +130,8 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
     if (convert_smv){
       tchecker::tck_convert::output_smv(sysdecl, std::cout);
+    } else if (complement){
+      tchecker::tck_convert::complement(sysdecl, std::cout);
     }
   }
   catch (std::exception & e) {
