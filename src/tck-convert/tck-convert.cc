@@ -33,23 +33,25 @@
 
 static struct option long_options[] = {{"smv", no_argument, 0, 's'},
                                        {"complement", no_argument, 0, 'c'},
+                                       {"output", required_argument, 0, 'o'},
                                        {"help", no_argument, 0, 'h'},
                                        {0, 0, 0, 0}};
 
-static char * const options = (char *)"csh";
+static char * const options = (char *)"cso:h";
 
 void usage(char * progname)
 {
   std::cerr << "Usage: " << progname << " [options] [file]" << std::endl;
   std::cerr << "   -s          convert to smv" << std::endl;
   std::cerr << "   -c          complement given deterministic TA" << std::endl;
+  std::cerr << "   -o          output file" << std::endl;
   std::cerr << "reads from standard input if file is not provided" << std::endl;
 }
 
 static bool convert_smv = false;
 static bool complement = false;
 static bool help = false;
-
+static std::string output_file;
 int parse_command_line(int argc, char * argv[])
 {
   while (true) {
@@ -69,6 +71,9 @@ int parse_command_line(int argc, char * argv[])
       break;
     case 'c':
       complement = true;
+      break;
+    case 'o':
+      output_file = optarg;
       break;
     case 'h':
       help = true;
@@ -128,10 +133,19 @@ int main(int argc, char * argv[])
     std::shared_ptr<tchecker::parsing::system_declaration_t> sysdecl{load_system(input_file)};
     if (sysdecl.get() == nullptr)
       return EXIT_FAILURE;
-    if (convert_smv){
-      tchecker::tck_convert::output_smv(sysdecl, std::cout);
-    } else if (complement){
-      tchecker::tck_convert::complement(sysdecl, std::cout);
+    if (output_file != "") {
+      std::ofstream ofs{output_file};
+      if (convert_smv){
+        tchecker::tck_convert::output_smv(sysdecl, ofs);
+      } else if (complement){
+        tchecker::tck_convert::complement(sysdecl, ofs);
+      }
+    } else {
+      if (convert_smv){
+        tchecker::tck_convert::output_smv(sysdecl, std::cout);
+      } else if (complement){
+        tchecker::tck_convert::complement(sysdecl, std::cout);
+      }      
     }
   }
   catch (std::exception & e) {

@@ -158,7 +158,7 @@ void generate_concrete_trace(tchecker::tck_reach::zg_reach::graph_t const & g,
   }
 
   tchecker::clock_id_t dim = currentNode->state().zone().dim();
-  tchecker::dbm::db_t * d = new tchecker::dbm::db_t[dim];
+  tchecker::dbm::db_t * d = new tchecker::dbm::db_t[dim*dim];
   int factor = 1;
 
   currentNode->state().zone().to_dbm(d);
@@ -224,7 +224,6 @@ run(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysdecl, st
     auto clock_valuations = std::make_shared<std::list<std::vector<double>>>();
     generate_concrete_trace(*graph, *zg, states, edges, clock_valuations);
   }
-
   return std::make_tuple(stats, graph);
 }
 

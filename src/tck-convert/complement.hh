@@ -254,84 +254,6 @@ public:
   tchecker::system::system_t complement() const { return _product; }
 
 private:
-//   /*!
-//    \brief Compute a name from a synchronization
-//    */
-//   std::string namify(tchecker::system::synchronization_t const & sync)
-//   {
-//     std::string name;
-//     auto constraints = sync.synchronization_constraints();
-//     tchecker::system::synchronization_t::const_iterator_t begin = constraints.begin();
-//     tchecker::system::synchronization_t::const_iterator_t end = constraints.end();
-//     for (auto it = begin; it != end; ++it) {
-//       if (it != begin)
-//         name += _separator;
-//       tchecker::system::sync_constraint_t const & constr = *it;
-//       name += _system->process_name(constr.pid()) + _separator + _system->event_name(constr.event_id());
-//     }
-//     return name;
-//   }
-
-//   /*!
-//    \brief Compute a name from a state (from vloc)
-//    */
-//   std::string namify(tchecker::ta::state_t const & state)
-//   {
-//     std::string name;
-//     auto begin = state.vloc().begin(), end = state.vloc().end();
-//     for (auto it = begin; it != end; ++it) {
-//       if (it != begin)
-//         name += _separator;
-//       name += _system->location(*it)->name();
-//     }
-//     return name;
-//   }
-
-//   /*!
-//    \brief Compute attributes from a state (from vloc)
-//    */
-//   tchecker::system::attributes_t attributes(tchecker::ta::state_t const & state)
-//   {
-//     tchecker::process_id_t count_initial = 0;
-//     tchecker::system::attributes_t attr;
-//     for (tchecker::loc_id_t id : state.vloc())
-//       for (auto && [key, value] : _system->location(id)->attributes().attributes()) {
-//         if (key == "initial")
-//           ++count_initial;
-//         else
-//           attr.add_attribute(key, value);
-//       }
-//     if (count_initial == state.vloc().size()) // all processes initial
-//       attr.add_attribute("initial", "");
-//     return attr;
-//   }
-
-//   /*!
-//    \brief Compute a name from a transition (from vedge)
-//    */
-//   std::string namify(tchecker::syncprod::transition_t const & transition)
-//   {
-//     std::string name;
-//     auto begin = transition.vedge().begin(), end = transition.vedge().end();
-//     for (auto it = begin; it != end; ++it) {
-//       if (it != begin)
-//         name += _separator;
-//       name +=
-//           _system->process_name(_system->edge(*it)->pid()) + _separator + _system->event_name(_system->edge(*it)->event_id());
-//     }
-//     return name;
-//   }
-
-//   /*!
-//    \brief Compute attributes from a transition (from vedge)
-//    */
-//   tchecker::system::attributes_t attributes(tchecker::syncprod::transition_t const & transition)
-//   {
-//     tchecker::system::attributes_t attr;
-//     for (tchecker::event_id_t id : transition.vedge())
-//       attr.add_attributes(_system->edge(id)->attributes());
-//     return attr;
-//   }
 
   /*!
    \brief Add bounded integer variables to synchronized product
@@ -366,6 +288,7 @@ private:
    */
   void locations_edges_events()
   {
+    // TODO Check whether we are deterministic
     guard_extractor_t gextractor;
     expression_complementer_t complementer;
     tchecker::process_id_t pid = _product.process_id(_process_name);
@@ -457,39 +380,13 @@ private:
  */
 void complement(std::shared_ptr<tchecker::parsing::system_declaration_t> sysdecl, std::ostream & os)
 {
-  // std::shared_ptr<tchecker::syncprod::system_t> system(new tchecker::syncprod::system_t(*sysdecl));
-  // tchecker::system::system_t product = tchecker::syncprod::synchronized_product(system, "complemented_ta", "_");
   auto system = std::make_shared<tchecker::ta::system_t>(*sysdecl);
   guard_extractor_t gextractor;
   expression_complementer_t excomplementer;
 
-//   tchecker::system::attributes_t attr;
-//   tchecker::parsing::system_declaration_t csys("complemented_" + sysdecl->name(), attr);
   system_complementer_t scomplementer(system);
   auto csys = scomplementer.complement();
-  tchecker::system::output_tck(std::cout, csys);
-
-  /*
-  for (auto e : system.edges()) {
-    std::cout << "Edge no " << e->id() << "\n";
-    auto & g = system.guard(e->id());
-    auto && [discrete_guards, clock_guards] = gextractor.extract(g);
-    for (auto ex : discrete_guards ){
-        auto com = excomplementer.get_complement(*ex);
-        std::cout << "Complement of : " << ex->to_string() << "\n";
-        for ( auto ce : com ){
-            std::cout << "\t" << ce->to_string() << "\n";
-        }
-    }
-    for (auto ex : clock_guards ){
-        auto com = excomplementer.get_complement(*ex);
-        std::cout << "Complement of : " << ex->to_string() << "\n";
-        for ( auto ce : com ){
-            std::cout << "\t" << ce->to_string() << "\n";
-        }
-    }
-  }
-    */
+  tchecker::system::output_tck(os, csys);
 }
 
 } // namespace tck_convert
