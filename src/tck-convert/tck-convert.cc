@@ -33,6 +33,7 @@
 
 static struct option long_options[] = {{"smv", no_argument, 0, 's'},
                                        {"complement", no_argument, 0, 'c'},
+                                       {"complete", no_argument, 0, 'm'},
                                        {"output", required_argument, 0, 'o'},
                                        {"help", no_argument, 0, 'h'},
                                        {0, 0, 0, 0}};
@@ -44,12 +45,14 @@ void usage(char * progname)
   std::cerr << "Usage: " << progname << " [options] [file]" << std::endl;
   std::cerr << "   -s          convert to smv" << std::endl;
   std::cerr << "   -c          complement given deterministic TA" << std::endl;
+  std::cerr << "   -m          render given TA complete by adding a rejecting location with label _reject_" << std::endl;
   std::cerr << "   -o          output file" << std::endl;
   std::cerr << "reads from standard input if file is not provided" << std::endl;
 }
 
 static bool convert_smv = false;
 static bool complement = false;
+static bool complete = false;
 static bool help = false;
 static std::string output_file;
 int parse_command_line(int argc, char * argv[])
@@ -71,6 +74,9 @@ int parse_command_line(int argc, char * argv[])
       break;
     case 'c':
       complement = true;
+      break;
+    case 'm':
+      complete = true;
       break;
     case 'o':
       output_file = optarg;
@@ -139,13 +145,17 @@ int main(int argc, char * argv[])
         tchecker::tck_convert::output_smv(sysdecl, ofs);
       } else if (complement){
         tchecker::tck_convert::complement(sysdecl, ofs);
+      } else if (complete) {
+        tchecker::tck_convert::complete(sysdecl, ofs);
       }
     } else {
       if (convert_smv){
         tchecker::tck_convert::output_smv(sysdecl, std::cout);
       } else if (complement){
         tchecker::tck_convert::complement(sysdecl, std::cout);
-      }      
+      } else if (complete){
+        tchecker::tck_convert::complete(sysdecl, std::cout);
+      }
     }
   }
   catch (std::exception & e) {

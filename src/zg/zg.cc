@@ -51,7 +51,6 @@ tchecker::state_status_t next(tchecker::ta::system_t const & system,
                               tchecker::zg::extrapolation_t & extrapolation, tchecker::zg::outgoing_edges_value_t const & edges)
 {
   bool src_delay_allowed = tchecker::ta::delay_allowed(system, *vloc);
-
   tchecker::state_status_t status =
       tchecker::ta::next(system, vloc, intval, vedge, src_invariant, guard, reset, tgt_invariant, edges);
   if (status != tchecker::STATE_OK)

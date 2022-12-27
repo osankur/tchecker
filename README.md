@@ -1,6 +1,5 @@
 # TChecker
 
-[![Build and test TChecker](https://github.com/ticktac-project/tchecker/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/ticktac-project/tchecker/actions/workflows/build-and-test.yml)
 [![License](https://img.shields.io/badge/license-MIT-informational.svg)](https://github.com/ticktac-project/tchecker/blob/master/LICENSE)
 
 
@@ -19,6 +18,12 @@ structures and algorithms for the verification and the synthesis of timed
 systems. The goal of the project is to implement state-of-the-art algorithms as
 well as benchmarks to evaluate these algorithms, and to share then with the
 community.
+
+This fork contains some simple additional features and is used in the following paper:
+
+  Ocan Sankur. Timed Automata Verification and Synthesis via Finite Automata Learning. TACAS 2023.
+
+Please refer to the [main repository for TChecker](github.com/ticktac-project/tchecker).
 
 ## Installation
 

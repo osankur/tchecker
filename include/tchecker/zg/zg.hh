@@ -398,7 +398,7 @@ public:
    */
   tchecker::ta::system_t const & system() const;
 
-private:
+protected:
   std::shared_ptr<tchecker::ta::system_t const> _system;           /*!< System of timed processes */
   std::unique_ptr<tchecker::zg::semantics_t> _semantics;           /*!< Zone semantics */
   std::unique_ptr<tchecker::zg::extrapolation_t> _extrapolation;   /*!< Zone extrapolation */

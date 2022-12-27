@@ -364,7 +364,7 @@ private:
 
   }
 
-  std::shared_ptr<tchecker::ta::system_t const> _system; /*!< System of timed processes */
+  std::shared_ptr<tchecker::ta::system_t const> _system;       /*!< System of timed processes */
   std::string _process_name;                                   /*!< Name of synchronized process */
   tchecker::system::system_t _product;                         /*!< Synchronized product of _system */
 };
