@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "syntax-check.hh"
 #include "tchecker/parsing/parsing.hh"
 #include "tchecker/syncprod/system.hh"
 #include "tchecker/system/output.hh"
@@ -31,10 +32,11 @@ static struct option long_options[] = {{"check", no_argument, 0, 'c'},
                                        {"delimiter", required_argument, 0, 'd'},
                                        {"process-name", required_argument, 0, 'n'},
                                        {"transform", no_argument, 0, 't'},
+                                       {"json", no_argument, 0, 'j'},
                                        {"help", no_argument, 0, 'h'},
                                        {0, 0, 0, 0}};
 
-static char * const options = (char *)"cd:hn:o:pt";
+static char * const options = (char *)"cd:hn:o:ptj";
 
 void usage(char * progname)
 {
@@ -42,6 +44,7 @@ void usage(char * progname)
   std::cerr << "   -c          syntax check (timed automaton)" << std::endl;
   std::cerr << "   -p          synchronized product" << std::endl;
   std::cerr << "   -t          transform a system into dot graphviz file format" << std::endl;
+  std::cerr << "   -j          transform a system into json file format" << std::endl;
   std::cerr << "   -o file     output file" << std::endl;
   std::cerr << "   -d delim    delimiter string (default: _)" << std::endl;
   std::cerr << "   -n name     name of synchronized process (default: P)" << std::endl;
@@ -52,6 +55,7 @@ void usage(char * progname)
 static bool check_syntax = false;
 static bool synchronized_product = false;
 static bool transform = false;
+static bool json = false;
 static bool help = false;
 static std::string delimiter = "_";
 static std::string process_name = "P";
@@ -94,6 +98,9 @@ int parse_command_line(int argc, char * argv[])
     case 't':
       transform = true;
       break;
+    case 'j':
+      json = true;
+      break;
     default:
       throw std::runtime_error("I should never be executed");
       break;
@@ -127,25 +134,12 @@ std::shared_ptr<tchecker::parsing::system_declaration_t> load_system(std::string
 /*!
  \brief Check timed automaton syntax from a declaration
  \param sysdecl : system declaration
- \return true if sysdecl contains a syntactically correct declaration of a
- system of timed automata, false otherwise
+ \post error and warnings have been reported to std::cerr
 */
-bool do_check_syntax_ta(tchecker::parsing::system_declaration_t const & sysdecl)
+void do_syntax_check_ta(tchecker::parsing::system_declaration_t const & sysdecl)
 {
-  try {
-    tchecker::ta::system_t system(sysdecl);
-  }
-  catch (std::exception & e) {
-    std::cerr << tchecker::log_error << e.what() << std::endl;
-  }
-
-  if (tchecker::log_error_count() > 0) {
-    tchecker::log_output_count(std::cout);
-    return false;
-  }
-
-  std::cout << "Syntax OK" << std::endl;
-  return true;
+  if (tchecker::tck_syntax::syntax_check_ta(std::cerr, sysdecl))
+    std::cout << "Syntax OK" << std::endl;
 }
 
 /*!
@@ -181,6 +175,22 @@ void do_output_dot(tchecker::parsing::system_declaration_t const & sysdecl, std:
 {
   std::shared_ptr<tchecker::system::system_t> system(new tchecker::system::system_t(sysdecl));
   tchecker::system::output_dot(os, *system, delimiter);
+  os << std::endl;
+}
+
+/*!
+ \brief Output a system of processes following the JSON format
+ \param sysdecl : system declaration
+ \param delimiter : delimiter used in node names
+ \param os : output stream
+ \post The system of processes in sysdecl has been output to os following the
+ JSON format, using delimiter as a separator between process name and
+ location name for node names.
+*/
+void do_output_json(tchecker::parsing::system_declaration_t const & sysdecl, std::string const & delimiter, std::ostream & os)
+{
+  std::shared_ptr<tchecker::system::system_t> system(new tchecker::system::system_t(sysdecl));
+  tchecker::system::output_json(os, *system, delimiter);
   os << std::endl;
 }
 
@@ -223,16 +233,19 @@ int main(int argc, char * argv[])
       return EXIT_FAILURE;
 
     if (check_syntax)
-      do_check_syntax_ta(*sysdecl);
+      do_syntax_check_ta(*sysdecl);
 
     if (synchronized_product)
       do_synchronized_product(*sysdecl, process_name, delimiter, *os);
 
     if (transform)
       do_output_dot(*sysdecl, delimiter, *os);
+    else if (json)
+      do_output_json(*sysdecl, delimiter, *os);
   }
   catch (std::exception & e) {
     std::cerr << tchecker::log_error << e.what() << std::endl;
+    return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;

@@ -169,18 +169,18 @@ boost::dynamic_bitset<> labels(tchecker::syncprod::system_t const & system, tche
   return l;
 }
 
-bool satisfies(tchecker::syncprod::system_t const & system, tchecker::vloc_t const & vloc,
-               boost::dynamic_bitset<> const & labels)
+boost::dynamic_bitset<> labels(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s)
 {
-  if (labels.none())
-    return false;
-  return labels.is_subset_of(tchecker::syncprod::labels(system, vloc));
+  return tchecker::syncprod::labels(system, s.vloc());
 }
 
-bool satisfies(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s,
-               boost::dynamic_bitset<> const & labels)
+/* is_valid_final */
+
+bool is_valid_final(tchecker::syncprod::system_t const & system, tchecker::vloc_t const & vloc) { return true; }
+
+bool is_valid_final(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s)
 {
-  return tchecker::syncprod::satisfies(system, s.vloc(), labels);
+  return tchecker::syncprod::is_valid_final(system, s.vloc());
 }
 
 /* is_initial */
@@ -207,17 +207,18 @@ void attributes(tchecker::syncprod::system_t const & system, tchecker::syncprod:
   m["vedge"] = tchecker::to_string(t.vedge(), system.as_system_system());
 }
 
-/* syncprod_t */
+/* syncprod_impl_t */
 
-syncprod_t::syncprod_t(std::shared_ptr<tchecker::syncprod::system_t const> const & system, std::size_t block_size)
-    : _system(system), _state_allocator(block_size, block_size, _system->processes_count()),
-      _transition_allocator(block_size, block_size, _system->processes_count())
+syncprod_impl_t::syncprod_impl_t(std::shared_ptr<tchecker::syncprod::system_t const> const & system, std::size_t block_size,
+                                 std::size_t table_size)
+    : _system(system), _state_allocator(block_size, block_size, _system->processes_count(), table_size),
+      _transition_allocator(block_size, block_size, _system->processes_count(), table_size)
 {
 }
 
-tchecker::syncprod::initial_range_t syncprod_t::initial_edges() { return tchecker::syncprod::initial_edges(*_system); }
+tchecker::syncprod::initial_range_t syncprod_impl_t::initial_edges() { return tchecker::syncprod::initial_edges(*_system); }
 
-void syncprod_t::initial(tchecker::syncprod::initial_value_t const & init_edge, std::vector<sst_t> & v)
+void syncprod_impl_t::initial(tchecker::syncprod::initial_value_t const & init_edge, std::vector<sst_t> & v)
 {
   tchecker::syncprod::state_sptr_t s = _state_allocator.construct();
   tchecker::syncprod::transition_sptr_t t = _transition_allocator.construct();
@@ -225,13 +226,13 @@ void syncprod_t::initial(tchecker::syncprod::initial_value_t const & init_edge, 
   v.push_back(std::make_tuple(status, s, t));
 }
 
-tchecker::syncprod::outgoing_edges_range_t syncprod_t::outgoing_edges(tchecker::syncprod::const_state_sptr_t const & s)
+tchecker::syncprod::outgoing_edges_range_t syncprod_impl_t::outgoing_edges(tchecker::syncprod::const_state_sptr_t const & s)
 {
   return tchecker::syncprod::outgoing_edges(*_system, s->vloc_ptr());
 }
 
-void syncprod_t::next(tchecker::syncprod::const_state_sptr_t const & s,
-                      tchecker::syncprod::outgoing_edges_value_t const & out_edge, std::vector<sst_t> & v)
+void syncprod_impl_t::next(tchecker::syncprod::const_state_sptr_t const & s,
+                           tchecker::syncprod::outgoing_edges_value_t const & out_edge, std::vector<sst_t> & v)
 {
   tchecker::syncprod::state_sptr_t nexts = _state_allocator.clone(*s);
   tchecker::syncprod::transition_sptr_t t = _transition_allocator.construct();
@@ -239,22 +240,40 @@ void syncprod_t::next(tchecker::syncprod::const_state_sptr_t const & s,
   v.push_back(std::make_tuple(status, nexts, t));
 }
 
-bool syncprod_t::satisfies(tchecker::syncprod::const_state_sptr_t const & s, boost::dynamic_bitset<> const & labels) const
+boost::dynamic_bitset<> syncprod_impl_t::labels(tchecker::syncprod::const_state_sptr_t const & s) const
 {
-  return tchecker::syncprod::satisfies(*_system, *s, labels);
+  return tchecker::syncprod::labels(*_system, *s);
 }
 
-void syncprod_t::attributes(tchecker::syncprod::const_state_sptr_t const & s, std::map<std::string, std::string> & m) const
+bool syncprod_impl_t::is_valid_final(tchecker::syncprod::const_state_sptr_t const & s) const
+{
+  return tchecker::syncprod::is_valid_final(*_system, *s);
+}
+
+void syncprod_impl_t::attributes(tchecker::syncprod::const_state_sptr_t const & s, std::map<std::string, std::string> & m) const
 {
   tchecker::syncprod::attributes(*_system, *s, m);
 }
 
-void syncprod_t::attributes(tchecker::syncprod::const_transition_sptr_t const & t, std::map<std::string, std::string> & m) const
+void syncprod_impl_t::attributes(tchecker::syncprod::const_transition_sptr_t const & t,
+                                 std::map<std::string, std::string> & m) const
 {
   tchecker::syncprod::attributes(*_system, *t, m);
 }
 
-tchecker::syncprod::system_t const & syncprod_t::system() const { return *_system; }
+void syncprod_impl_t::share(tchecker::syncprod::state_sptr_t & s) { _state_allocator.share(s); }
+
+void syncprod_impl_t::share(tchecker::syncprod::transition_sptr_t & t) { _transition_allocator.share(t); }
+
+tchecker::syncprod::system_t const & syncprod_impl_t::system() const { return *_system; }
+
+/* syncprod_t */
+
+tchecker::syncprod::system_t const & syncprod_t::system() const { return ts_impl().system(); }
+
+/* sharing_syncprod_t */
+
+tchecker::syncprod::system_t const & sharing_syncprod_t::system() const { return ts_impl().system(); }
 
 } // end of namespace syncprod
 

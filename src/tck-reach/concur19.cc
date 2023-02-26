@@ -9,7 +9,9 @@
 
 #include "concur19.hh"
 #include "tchecker/algorithms/search_order.hh"
+#include "tchecker/system/static_analysis.hh"
 #include "tchecker/ta/state.hh"
+#include "tchecker/utils/log.hh"
 
 namespace tchecker {
 
@@ -29,7 +31,7 @@ std::size_t node_hash_t::operator()(tchecker::tck_reach::concur19::node_t const 
 {
   // NB: we hash on the discrete part of the state in n to check all nodes
   // with same discrete part for covering
-  return tchecker::ta::hash_value(n.state());
+  return tchecker::ta::shared_hash_value(n.state());
 }
 
 /* node_le_t */
@@ -92,7 +94,7 @@ bool node_le_t::operator()(tchecker::tck_reach::concur19::node_t const & n1,
                            tchecker::tck_reach::concur19::node_t const & n2) const
 {
   _clockbounds->local_lu(n2.state().vloc(), *_l, *_u);
-  return tchecker::refzg::is_sync_alu_le(n1.state(), n2.state(), *_l, *_u);
+  return tchecker::refzg::shared_is_sync_alu_le(n1.state(), n2.state(), *_l, *_u);
 }
 
 /* edge_t */
@@ -101,7 +103,8 @@ edge_t::edge_t(tchecker::refzg::transition_t const & t) : _vedge(t.vedge_ptr()) 
 
 /* graph_t */
 
-graph_t::graph_t(std::shared_ptr<tchecker::refzg::refzg_t> const & refzg, std::size_t block_size, std::size_t table_size)
+graph_t::graph_t(std::shared_ptr<tchecker::refzg::sharing_refzg_t> const & refzg, std::size_t block_size,
+                 std::size_t table_size)
     : tchecker::graph::subsumption::graph_t<tchecker::tck_reach::concur19::node_t, tchecker::tck_reach::concur19::edge_t,
                                             tchecker::tck_reach::concur19::node_hash_t,
                                             tchecker::tck_reach::concur19::node_le_t>(
@@ -183,12 +186,14 @@ run(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysdecl, st
     std::string const & search_order, std::size_t block_size, std::size_t table_size)
 {
   std::shared_ptr<tchecker::ta::system_t const> system{new tchecker::ta::system_t{*sysdecl}};
+  if (!tchecker::system::every_process_has_initial_location(system->as_system_system()))
+    std::cerr << tchecker::log_warning << "system has no initial state" << std::endl;
 
-  std::shared_ptr<tchecker::refzg::refzg_t> refzg{tchecker::refzg::factory(system, tchecker::refzg::PROCESS_REFERENCE_CLOCKS,
-                                                                           tchecker::refzg::SYNC_ELAPSED_SEMANTICS,
-                                                                           tchecker::refdbm::UNBOUNDED_SPREAD, block_size)};
+  std::shared_ptr<tchecker::refzg::sharing_refzg_t> refzg{tchecker::refzg::factory_sharing(
+      system, tchecker::refzg::PROCESS_REFERENCE_CLOCKS, tchecker::refzg::SYNC_ELAPSED_SEMANTICS,
+      tchecker::refdbm::UNBOUNDED_SPREAD, block_size, table_size)};
 
-  std::shared_ptr<tchecker::tck_reach::concur19::graph_t> graph{
+  std ::shared_ptr<tchecker::tck_reach::concur19::graph_t> graph{
       new tchecker::tck_reach::concur19::graph_t{refzg, block_size, table_size}};
 
   boost::dynamic_bitset<> accepting_labels = system->as_syncprod_system().labels(labels);

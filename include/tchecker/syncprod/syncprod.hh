@@ -287,26 +287,29 @@ boost::dynamic_bitset<> committed_processes(tchecker::syncprod::system_t const &
 boost::dynamic_bitset<> labels(tchecker::syncprod::system_t const & system, tchecker::vloc_t const & vloc);
 
 /*!
- \brief Checks if a vloc satisfies a set of labels
- \param system : a system
- \param vloc : tuple of locations
- \param labels : set of labels
- \return true if labels is not empty and labels is included in the set of labels
- in vloc, false otherwise
-*/
-bool satisfies(tchecker::syncprod::system_t const & system, tchecker::vloc_t const & vloc,
-               boost::dynamic_bitset<> const & labels);
-
-/*!
- \brief Checks if a state satisfies a set of labels
+ \brief Compute labels of a state
  \param system : a system
  \param s : a state
- \param labels : set of labels
- \return true if labels is not empty and labels is included in the set of labels
- in s, false otherwise
+ \return a dynamic bitset of size system.labels_count() that contains all labels
+ on state s
 */
-bool satisfies(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s,
-               boost::dynamic_bitset<> const & labels);
+boost::dynamic_bitset<> labels(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s);
+
+/*!
+ \brief Checks is a state is a valid final state
+ \param system : a system
+ \param s : a state
+ \return true
+*/
+bool is_valid_final(tchecker::syncprod::system_t const & system, tchecker::vloc_t const & vloc);
+
+/*!
+ \brief Checks is a state is a valid final state
+ \param system : a system
+ \param s : a state
+ \return true
+*/
+bool is_valid_final(tchecker::syncprod::system_t const & system, tchecker::syncprod::state_t const & s);
 
 /*!
  \brief Checks if a tuple of locations is initial
@@ -337,70 +340,77 @@ void attributes(tchecker::syncprod::system_t const & system, tchecker::syncprod:
                 std::map<std::string, std::string> & m);
 
 /*!
- \class syncprod_t
- \brief Synchronized product of timed processes with state and transition
- allocation
+ \class syncprod_impl_t
+ \brief Low-level implementation of synchronized product of timed processes with
+ state and transition allocation
  \note all returned states and transitions deallocated automatically
  */
-class syncprod_t final
-    : public tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
+class syncprod_impl_t final
+    : public tchecker::ts::ts_impl_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
                                      tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
                                      tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
                                      tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t> {
 public:
+  // Inherited types
+
+  using ts_impl_t = tchecker::ts::ts_impl_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
+                                            tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
+                                            tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
+                                            tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>;
+  using sst_t = ts_impl_t::sst_t;
+  using state_t = ts_impl_t::state_t;
+  using const_state_t = ts_impl_t::const_state_t;
+  using transition_t = ts_impl_t::transition_t;
+  using const_transition_t = ts_impl_t::const_transition_t;
+  using initial_range_t = ts_impl_t::initial_range_t;
+  using initial_value_t = ts_impl_t::initial_value_t;
+  using outgoing_edges_range_t = ts_impl_t::outgoing_edges_range_t;
+  using outgoing_edges_value_t = ts_impl_t::outgoing_edges_value_t;
+
   /*!
    \brief Constructor
    \param system : a system of timed processes
    \param block_size : number of objects allocated in a block
+   \param table_size : size of hash tables
    \note all states and transitions are pool allocated and deallocated automatically
    */
-  syncprod_t(std::shared_ptr<tchecker::syncprod::system_t const> const & system, std::size_t block_size);
+  syncprod_impl_t(std::shared_ptr<tchecker::syncprod::system_t const> const & system, std::size_t block_size,
+                  std::size_t table_size);
 
   /*!
    \brief Copy constructor (deleted)
    */
-  syncprod_t(tchecker::syncprod::syncprod_t const &) = delete;
+  syncprod_impl_t(tchecker::syncprod::syncprod_impl_t const &) = delete;
 
   /*!
    \brief Move constructor (deleted)
    */
-  syncprod_t(tchecker::syncprod::syncprod_t &&) = delete;
+  syncprod_impl_t(tchecker::syncprod::syncprod_impl_t &&) = delete;
 
   /*!
    \brief Destructor
    */
-  virtual ~syncprod_t() = default;
+  virtual ~syncprod_impl_t() = default;
 
   /*!
    \brief Assignment operator (deleted)
    */
-  tchecker::syncprod::syncprod_t & operator=(tchecker::syncprod::syncprod_t const &) = delete;
+  tchecker::syncprod::syncprod_impl_t & operator=(tchecker::syncprod::syncprod_impl_t const &) = delete;
 
   /*!
    \brief Move-assignment operator (deleted)
    */
-  tchecker::syncprod::syncprod_t & operator=(tchecker::syncprod::syncprod_t &&) = delete;
+  tchecker::syncprod::syncprod_impl_t & operator=(tchecker::syncprod::syncprod_impl_t &&) = delete;
 
-  using tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
-                                tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
-                                tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
-                                tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>::status;
-
-  using tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
-                                tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
-                                tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
-                                tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>::state;
-
-  using tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
-                                tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
-                                tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
-                                tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>::transition;
+  using ts_impl_t::state;
+  using ts_impl_t::status;
+  using ts_impl_t::transition;
 
   /*!
    \brief Accessor
    \return initial edges
    */
-  virtual tchecker::syncprod::initial_range_t initial_edges();
+  virtual initial_range_t initial_edges();
 
   /*!
    \brief Initial state and transition
@@ -412,12 +422,14 @@ public:
    */
   virtual void initial(tchecker::syncprod::initial_value_t const & init_edge, std::vector<sst_t> & v);
 
+  using ts_impl_t::initial;
+
   /*!
    \brief Accessor
    \param s : state
    \return outgoing edges from state s
    */
-  virtual tchecker::syncprod::outgoing_edges_range_t outgoing_edges(tchecker::syncprod::const_state_sptr_t const & s);
+  virtual outgoing_edges_range_t outgoing_edges(tchecker::syncprod::const_state_sptr_t const & s);
 
   /*!
    \brief Next state and transition
@@ -430,24 +442,21 @@ public:
   virtual void next(tchecker::syncprod::const_state_sptr_t const & s,
                     tchecker::syncprod::outgoing_edges_value_t const & out_edge, std::vector<sst_t> & v);
 
-  using tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
-                                tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
-                                tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
-                                tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>::initial;
-
-  using tchecker::ts::full_ts_t<tchecker::syncprod::state_sptr_t, tchecker::syncprod::const_state_sptr_t,
-                                tchecker::syncprod::transition_sptr_t, tchecker::syncprod::const_transition_sptr_t,
-                                tchecker::syncprod::initial_range_t, tchecker::syncprod::outgoing_edges_range_t,
-                                tchecker::syncprod::initial_value_t, tchecker::syncprod::outgoing_edges_value_t>::next;
+  using ts_impl_t::next;
 
   /*!
-  \brief Checks if a state satisfies a set of labels
-  \param s : a state
-  \param labels : a set of labels
-  \return true if labels is not empty and labels is included in the set of
-  labels of state s, false otherwise
+   \brief Computes the set of labels of a state
+   \param s : a state
+   \return the set of labels on state s
    */
-  virtual bool satisfies(tchecker::syncprod::const_state_sptr_t const & s, boost::dynamic_bitset<> const & labels) const;
+  virtual boost::dynamic_bitset<> labels(tchecker::syncprod::const_state_sptr_t const & s) const;
+
+  /*!
+  \brief Checks if a state is a valid final state
+  \param s : a state
+  \return true if a run ending in s is a valid run, false otherwise
+  */
+  virtual bool is_valid_final(tchecker::syncprod::const_state_sptr_t const & s) const;
 
   /*!
    \brief Accessor to state attributes as strings
@@ -466,6 +475,22 @@ public:
   virtual void attributes(tchecker::syncprod::const_transition_sptr_t const & t, std::map<std::string, std::string> & m) const;
 
   /*!
+   \brief Share state components
+   \param s : a state
+   \post internal components in s have been shared
+   \note THE RESULTING STATE SHOULD NOT BE MODIFIED
+  */
+  virtual void share(tchecker::syncprod::state_sptr_t & s);
+
+  /*!
+   \brief Share transition components
+   \param t : a transition
+   \post internal components in t have been shared
+   \note THE RESULTING TRANSITION SHOULD NOT BE MODIFIED
+  */
+  virtual void share(tchecker::syncprod::transition_sptr_t & t);
+
+  /*!
    \brief Accessor
    \return Underlying system of timed processes
    */
@@ -475,6 +500,50 @@ private:
   std::shared_ptr<tchecker::syncprod::system_t const> _system;           /*!< System of timed processes */
   tchecker::syncprod::state_pool_allocator_t _state_allocator;           /*!< Allocator of states */
   tchecker::syncprod::transition_pool_allocator_t _transition_allocator; /*!< Allocator of transitions */
+};
+
+/*!
+ \class syncprod_t
+ \brief Transition system of synchronized product of timed processes with
+ state and transition allocation
+ \note all returned states and transitions deallocated automatically
+ */
+class syncprod_t final : public tchecker::ts::make_ts_from_impl_t<tchecker::syncprod::syncprod_impl_t> {
+public:
+  using tchecker::ts::make_ts_from_impl_t<tchecker::syncprod::syncprod_impl_t>::make_ts_from_impl_t;
+
+  /*!
+   \brief Destructor
+  */
+  virtual ~syncprod_t() = default;
+
+  /*!
+   \brief Accessor
+   \return Underlying system of timed processes
+   */
+  tchecker::syncprod::system_t const & system() const;
+};
+
+/*!
+ \class sharing_syncprod_t
+ \brief Transition system of synchronized product of timed processes with
+ state and transition allocation, as well as state and transition sharing
+ \note all returned states and transitions deallocated automatically
+ */
+class sharing_syncprod_t final : public tchecker::ts::make_sharing_ts_from_impl_t<tchecker::syncprod::syncprod_impl_t> {
+public:
+  using tchecker::ts::make_sharing_ts_from_impl_t<tchecker::syncprod::syncprod_impl_t>::make_sharing_ts_from_impl_t;
+
+  /*!
+   \brief Destructor
+  */
+  virtual ~sharing_syncprod_t() = default;
+
+  /*!
+   \brief Accessor
+   \return Underlying system of timed processes
+   */
+  tchecker::syncprod::system_t const & system() const;
 };
 
 } // end of namespace syncprod

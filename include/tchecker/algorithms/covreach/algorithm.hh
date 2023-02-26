@@ -34,7 +34,7 @@ namespace covreach {
  \tparam TS : type of transition system, should derive from tchecker::ts::ts_t
  \tparam GRAPH : type of graph, should derive from
  tchecker::graph::subsumption::graph_t, and nodes of type GRAPH::shared_node_t
- should have a method state)ptr() that yields a pointer to the corresponding
+ should have a method state_ptr() that yields a pointer to the corresponding
  state in TS.
  For correctness of the algorithm, the covering relation over nodes in GRAPH
  should be a trace inclusion, and it should be irreflexive: a node should not
@@ -42,6 +42,8 @@ namespace covreach {
 */
 template <class TS, class GRAPH> class algorithm_t {
 public:
+  using node_sptr_t = typename GRAPH::node_sptr_t;
+
   /*!
    \brief Build a covering reachability graph of a transition system from its
    initial states
@@ -63,8 +65,6 @@ public:
   tchecker::algorithms::covreach::stats_t run(TS & ts, GRAPH & graph, boost::dynamic_bitset<> const & labels,
                                               enum tchecker::waiting::policy_t policy)
   {
-    using node_sptr_t = typename GRAPH::node_sptr_t;
-
     std::unique_ptr<tchecker::waiting::waiting_t<node_sptr_t>> waiting{tchecker::waiting::factory<node_sptr_t>(policy)};
     tchecker::algorithms::covreach::stats_t stats;
     std::vector<node_sptr_t> nodes, covered_nodes;
@@ -82,7 +82,7 @@ public:
 
       ++stats.visited_states();
 
-      if (ts.satisfies(node->state_ptr(), labels)) {
+      if (accepting(node, ts, labels)) {
         stats.reachable() = true;
         break;
       }
@@ -159,6 +159,7 @@ public:
 
     ts.next(node->state_ptr(), sst);
     for (auto && [status, s, t] : sst) {
+      ++stats.visited_transitions();
       typename GRAPH::node_sptr_t next_node = graph.add_node(s);
       if (graph.is_covered(next_node, covering_node)) {
         graph.add_edge(node, covering_node, tchecker::graph::subsumption::EDGE_SUBSUMPTION, *t);
@@ -198,6 +199,19 @@ public:
       graph.remove_node(covered_node);
       ++stats.covered_states();
     }
+  }
+
+  /*!
+   \brief Check if a node is accepting
+   \param n : a node
+   \param ts : a transition system
+   \param labels : a set of labels
+   \return true if labels is not empty, and the set of labels in n contain
+   labels, and n is a valid final state in ts, false otherwise
+   */
+  bool accepting(node_sptr_t const & n, TS & ts, boost::dynamic_bitset<> const & labels)
+  {
+    return !labels.none() && labels.is_subset_of(ts.labels(n->state_ptr())) && ts.is_valid_final(n->state_ptr());
   }
 };
 

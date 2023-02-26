@@ -9,6 +9,7 @@
 #define TCHECKER_REFZG_HH
 
 #include <cstdlib>
+#include <memory>
 
 #include "tchecker/basictypes.hh"
 #include "tchecker/clockbounds/clockbounds.hh"
@@ -248,15 +249,21 @@ inline tchecker::state_status_t next(tchecker::ta::system_t const & system, tche
 }
 
 /*!
- \brief Checks if a state satisfies a set of labels
- \param system : a system of timed processes
+  \brief Computes the set of labels of a state
+  \param system : a system
+  \param s : a state
+  \return the set of labels on state s
+  */
+boost::dynamic_bitset<> labels(tchecker::ta::system_t const & system, tchecker::refzg::state_t const & s);
+
+/*!
+ \brief Checks is a state is a valid final state
+ \param system : a system
  \param s : a state
- \param labels : a set of labels
- \return true if labels is not empty and labels is included in the set of
- labels of state s, false otherwise
+ \return true if s has a non-empty zone that contains a synchronized valuation,
+ false otherwise
 */
-bool satisfies(tchecker::ta::system_t const & system, tchecker::refzg::state_t const & s,
-               boost::dynamic_bitset<> const & labels);
+bool is_valid_final(tchecker::ta::system_t const & system, tchecker::refzg::state_t const & s);
 
 /*!
  \brief Accessor to state attributes as strings
@@ -279,14 +286,31 @@ void attributes(tchecker::ta::system_t const & system, tchecker::refzg::transiti
                 std::map<std::string, std::string> & m);
 
 /*!
- \class refzg_t
- \brief Zone graph with reference clocks of a timed automaton
+ \class refzg_impl_t
+ \brief Low-level transition system implementation of zone graph with reference
+ clocks of a timed automaton
  */
-class refzg_t : public tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                               tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                               tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                               tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t> {
+class refzg_impl_t final
+    : public tchecker::ts::ts_impl_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
+                                     tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
+                                     tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
+                                     tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t> {
 public:
+  // Inherited types
+  using ts_impl_t = tchecker::ts::ts_impl_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
+                                            tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
+                                            tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
+                                            tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>;
+  using sst_t = ts_impl_t::sst_t;
+  using state_t = ts_impl_t::state_t;
+  using const_state_t = ts_impl_t::const_state_t;
+  using transition_t = ts_impl_t::transition_t;
+  using const_transition_t = ts_impl_t::const_transition_t;
+  using initial_range_t = ts_impl_t::initial_range_t;
+  using initial_value_t = ts_impl_t::initial_value_t;
+  using outgoing_edges_range_t = ts_impl_t::outgoing_edges_range_t;
+  using outgoing_edges_value_t = ts_impl_t::outgoing_edges_value_t;
+
   /*!
    \brief Constructor
    \param system : a system of timed processes
@@ -294,53 +318,44 @@ public:
    \param semantics : a semantics over zones with reference clocks
    \param spread : spread bound over reference clocks
    \param block_size : number of objects allocated in a block
+   \param table_size : size of hash tables
    \note all states and transitions are pool allocated and deallocated
    automatically
    \note set spread to tchecker::refdbm::UNBOUNDED_SPREAD for unbounded spread
    */
-  refzg_t(std::shared_ptr<tchecker::ta::system_t const> const & system,
-          std::shared_ptr<tchecker::reference_clock_variables_t const> const & r,
-          std::unique_ptr<tchecker::refzg::semantics_t> && semantics, tchecker::integer_t spread, std::size_t block_size);
+  refzg_impl_t(std::shared_ptr<tchecker::ta::system_t const> const & system,
+               std::shared_ptr<tchecker::reference_clock_variables_t const> const & r,
+               std::shared_ptr<tchecker::refzg::semantics_t> const & semantics, tchecker::integer_t spread,
+               std::size_t block_size, std::size_t table_size = 65536);
 
   /*!
    \brief Copy constructor (deleted)
    */
-  refzg_t(tchecker::refzg::refzg_t const &) = delete;
+  refzg_impl_t(tchecker::refzg::refzg_impl_t const &) = delete;
 
   /*!
    \brief Move constructor (deleted)
    */
-  refzg_t(tchecker::refzg::refzg_t &&) = delete;
+  refzg_impl_t(tchecker::refzg::refzg_impl_t &&) = delete;
 
   /*!
    \brief Destructor
    */
-  virtual ~refzg_t() = default;
+  virtual ~refzg_impl_t() = default;
 
   /*!
    \brief Assignment operator (deleted)
    */
-  tchecker::refzg::refzg_t & operator=(tchecker::refzg::refzg_t const &) = delete;
+  tchecker::refzg::refzg_impl_t & operator=(tchecker::refzg::refzg_impl_t const &) = delete;
 
   /*!
    \brief Move-assignment operator (deleted)
    */
-  tchecker::refzg::refzg_t & operator=(tchecker::refzg::refzg_t &&) = delete;
+  tchecker::refzg::refzg_impl_t & operator=(tchecker::refzg::refzg_impl_t &&) = delete;
 
-  using tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>::status;
-
-  using tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>::state;
-
-  using tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>::transition;
+  using ts_impl_t::state;
+  using ts_impl_t::status;
+  using ts_impl_t::transition;
 
   /*!
    \brief Accessor
@@ -356,6 +371,8 @@ public:
    and initial transition t that are initialized from init_edge.
    */
   virtual void initial(tchecker::refzg::initial_value_t const & init_edge, std::vector<sst_t> & v);
+
+  using ts_impl_t::initial;
 
   /*!
    \brief Accessor
@@ -375,24 +392,22 @@ public:
   virtual void next(tchecker::refzg::const_state_sptr_t const & s, tchecker::refzg::outgoing_edges_value_t const & out_edge,
                     std::vector<sst_t> & v);
 
-  using tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>::initial;
-
-  using tchecker::ts::full_ts_t<tchecker::refzg::state_sptr_t, tchecker::refzg::const_state_sptr_t,
-                                tchecker::refzg::transition_sptr_t, tchecker::refzg::const_transition_sptr_t,
-                                tchecker::refzg::initial_range_t, tchecker::refzg::outgoing_edges_range_t,
-                                tchecker::refzg::initial_value_t, tchecker::refzg::outgoing_edges_value_t>::next;
+  using ts_impl_t::next;
 
   /*!
-  \brief Checks if a state satisfies a set of labels
-  \param s : a state
-  \param labels : a set of labels
-  \return true if labels is not empty and labels is included in the set of
-  labels of state s, false otherwise
+   \brief Computes the set of labels of a state
+   \param s : a state
+   \return the set of labels on state s
+   */
+  virtual boost::dynamic_bitset<> labels(tchecker::refzg::const_state_sptr_t const & s) const;
+
+  /*!
+   \brief Checks if a state is a valid final state
+   \param s : a state
+   \return true is s has a non-empty zone that contains a synchronized
+   valuation, false otherwise
   */
-  virtual bool satisfies(tchecker::refzg::const_state_sptr_t const & s, boost::dynamic_bitset<> const & labels) const;
+  virtual bool is_valid_final(tchecker::refzg::const_state_sptr_t const & s) const;
 
   /*!
    \brief Accessor to state attributes as strings
@@ -411,6 +426,22 @@ public:
   virtual void attributes(tchecker::refzg::const_transition_sptr_t const & t, std::map<std::string, std::string> & m) const;
 
   /*!
+   \brief Share state components
+   \param s : a state
+   \post internal components in s have been shared
+   \note THE RESULTING STATE SHOULD NOT BE MODIFIED
+  */
+  virtual void share(tchecker::refzg::state_sptr_t & s);
+
+  /*!
+   \brief Share transition components
+   \param t : a transition
+   \post internal components in t have been shared
+   \note THE RESULTING TRANSITION SHOULD NOT BE MODIFIED
+  */
+  virtual void share(tchecker::refzg::transition_sptr_t & t);
+
+  /*!
    \brief Accessor
    \return Underlying system of timed processes
    */
@@ -419,10 +450,54 @@ public:
 private:
   std::shared_ptr<tchecker::ta::system_t const> _system;              /*!< System of timed processes */
   std::shared_ptr<tchecker::reference_clock_variables_t const> _r;    /*!< Reference clock variables */
-  std::unique_ptr<tchecker::refzg::semantics_t> _semantics;           /*!< Zone semantics */
+  std::shared_ptr<tchecker::refzg::semantics_t> _semantics;           /*!< Zone semantics */
   tchecker::integer_t _spread;                                        /*!< Spread bound over reference clocks */
   tchecker::refzg::state_pool_allocator_t _state_allocator;           /*!< Pool allocator of states */
   tchecker::refzg::transition_pool_allocator_t _transition_allocator; /*! Pool allocator of transitions */
+};
+
+/*!
+ \class refzg_t
+ \brief Zone graph with reference clocks of a timed automaton with allocation of
+ states and transitions, as well as states and transitions sharing
+ \note all returned states and transitions deallocated automatically
+ */
+class refzg_t final : public tchecker::ts::make_ts_from_impl_t<tchecker::refzg::refzg_impl_t> {
+public:
+  using tchecker::ts::make_ts_from_impl_t<tchecker::refzg::refzg_impl_t>::make_ts_from_impl_t;
+
+  /*!
+   \brief Destructor
+  */
+  virtual ~refzg_t() = default;
+
+  /*!
+   \brief Accessor
+   \return Underlying system of timed processes
+   */
+  tchecker::ta::system_t const & system() const;
+};
+
+/*!
+ \class sharing_refzg_t
+ \brief Zone graph with reference clocks of a timed automaton with allocation of
+ states and transitions, as well as states and transitions sharing
+ \note all returned states and transitions deallocated automatically
+ */
+class sharing_refzg_t final : public tchecker::ts::make_sharing_ts_from_impl_t<tchecker::refzg::refzg_impl_t> {
+public:
+  using tchecker::ts::make_sharing_ts_from_impl_t<tchecker::refzg::refzg_impl_t>::make_sharing_ts_from_impl_t;
+
+  /*!
+   \brief Destructor
+  */
+  virtual ~sharing_refzg_t() = default;
+
+  /*!
+   \brief Accessor
+   \return Underlying system of timed processes
+   */
+  tchecker::ta::system_t const & system() const;
 };
 
 /* Factory */
@@ -442,6 +517,7 @@ enum reference_clock_variables_type_t {
  \param semantics_type : type of semantics over zones with reference clocks
  \param spread : spread bound over reference clocks
  \param block_size : number of objects allocated in a block
+ \param table_size : size of hash tables
  \return a zone graph over system with zone semantics and spread bound
  defined from semantics_type and spread, reference clocks defined from
  refclocks_type, and allocation of block_size objects at a time
@@ -450,7 +526,27 @@ enum reference_clock_variables_type_t {
 tchecker::refzg::refzg_t * factory(std::shared_ptr<tchecker::ta::system_t const> const & system,
                                    enum tchecker::refzg::reference_clock_variables_type_t refclocks_type,
                                    enum tchecker::refzg::semantics_type_t semantics_type, tchecker::integer_t spread,
-                                   std::size_t block_size);
+                                   std::size_t block_size, std::size_t table_size);
+
+/*!
+ \brief Factory of zone graphs with reference clocks and states/transitions sharing
+ \param system : system of timed processes
+ \param refclocks_type : type of reference clocks
+ \param semantics_type : type of semantics over zones with reference clocks
+ \param spread : spread bound over reference clocks
+ \param block_size : number of objects allocated in a block
+ \param table_size : size of hash tables
+ \return a zone graph over system with zone semantics and spread bound
+ defined from semantics_type and spread, reference clocks defined from
+ refclocks_type, and allocation of block_size objects at a time
+ \note set spread to tchecker::refdbm::UNBOUNDED_SPREAD for unbounded spread
+ \note the states and transitions computed by the returned zone graph share
+ internal components
+ */
+tchecker::refzg::sharing_refzg_t * factory_sharing(std::shared_ptr<tchecker::ta::system_t const> const & system,
+                                                   enum tchecker::refzg::reference_clock_variables_type_t refclocks_type,
+                                                   enum tchecker::refzg::semantics_type_t semantics_type,
+                                                   tchecker::integer_t spread, std::size_t block_size, std::size_t hash_table);
 
 } // end of namespace refzg
 

@@ -67,18 +67,6 @@ echo "#labels=${labels}"
 
 # Model
 
-echo "#clock:size:name
-#int:size:min:max:init:name
-#process:name
-#event:name
-#location:process:name{attributes}
-#edge:process:source:target:event:{attributes}
-#sync:events
-#   where
-#   attributes is a colon-separated list of key:value
-#   events is a colon-separated list of process@event
-"
-
 echo "system:dining_philosophers_${N}_${TIMEOUT}_${EAT}_${SLOW}
 "
 

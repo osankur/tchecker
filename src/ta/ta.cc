@@ -135,9 +135,16 @@ boost::dynamic_bitset<> sync_refclocks(tchecker::ta::system_t const & system, tc
 
 /* labels */
 
-bool satisfies(tchecker::ta::system_t const & system, tchecker::ta::state_t const & s, boost::dynamic_bitset<> const & labels)
+boost::dynamic_bitset<> labels(tchecker::ta::system_t const & system, tchecker::ta::state_t const & s)
 {
-  return tchecker::syncprod::satisfies(system.as_syncprod_system(), s, labels);
+  return tchecker::syncprod::labels(system.as_syncprod_system(), s);
+}
+
+/* is_valid_final */
+
+bool is_valid_final(tchecker::ta::system_t const & system, tchecker::ta::state_t const & s)
+{
+  return tchecker::syncprod::is_valid_final(system.as_syncprod_system(), s);
 }
 
 /* attributes */
@@ -154,18 +161,19 @@ void attributes(tchecker::ta::system_t const & system, tchecker::ta::transition_
   tchecker::syncprod::attributes(system.as_syncprod_system(), t, m);
 }
 
-/* ta_t */
+/* ta_impl_t */
 
-ta_t::ta_t(std::shared_ptr<tchecker::ta::system_t const> const & system, std::size_t block_size)
+ta_impl_t::ta_impl_t(std::shared_ptr<tchecker::ta::system_t const> const & system, std::size_t block_size,
+                     std::size_t table_size)
     : _system(system), _state_allocator(block_size, block_size, _system->processes_count(), block_size,
-                                        _system->intvars_count(tchecker::VK_FLATTENED)),
-      _transition_allocator(block_size, block_size, _system->processes_count())
+                                        _system->intvars_count(tchecker::VK_FLATTENED), table_size),
+      _transition_allocator(block_size, block_size, _system->processes_count(), table_size)
 {
 }
 
-tchecker::ta::initial_range_t ta_t::initial_edges() { return tchecker::ta::initial_edges(*_system); }
+tchecker::ta::initial_range_t ta_impl_t::initial_edges() { return tchecker::ta::initial_edges(*_system); }
 
-void ta_t::initial(tchecker::ta::initial_value_t const & init_edge, std::vector<sst_t> & v)
+void ta_impl_t::initial(tchecker::ta::initial_value_t const & init_edge, std::vector<sst_t> & v)
 {
   tchecker::ta::state_sptr_t s = _state_allocator.construct();
   tchecker::ta::transition_sptr_t t = _transition_allocator.construct();
@@ -173,13 +181,13 @@ void ta_t::initial(tchecker::ta::initial_value_t const & init_edge, std::vector<
   v.push_back(std::make_tuple(status, s, t));
 }
 
-tchecker::ta::outgoing_edges_range_t ta_t::outgoing_edges(tchecker::ta::const_state_sptr_t const & s)
+tchecker::ta::outgoing_edges_range_t ta_impl_t::outgoing_edges(tchecker::ta::const_state_sptr_t const & s)
 {
   return tchecker::ta::outgoing_edges(*_system, s->vloc_ptr());
 }
 
-void ta_t::next(tchecker::ta::const_state_sptr_t const & s, tchecker::ta::outgoing_edges_value_t const & out_edge,
-                std::vector<sst_t> & v)
+void ta_impl_t::next(tchecker::ta::const_state_sptr_t const & s, tchecker::ta::outgoing_edges_value_t const & out_edge,
+                     std::vector<sst_t> & v)
 {
   tchecker::ta::state_sptr_t nexts = _state_allocator.clone(*s);
   tchecker::ta::transition_sptr_t t = _transition_allocator.construct();
@@ -187,22 +195,39 @@ void ta_t::next(tchecker::ta::const_state_sptr_t const & s, tchecker::ta::outgoi
   v.push_back(std::make_tuple(status, nexts, t));
 }
 
-bool ta_t::satisfies(tchecker::ta::const_state_sptr_t const & s, boost::dynamic_bitset<> const & labels) const
+boost::dynamic_bitset<> ta_impl_t::labels(tchecker::ta::const_state_sptr_t const & s) const
 {
-  return tchecker::ta::satisfies(*_system, *s, labels);
+  return tchecker::ta::labels(*_system, *s);
 }
 
-void ta_t::attributes(tchecker::ta::const_state_sptr_t const & s, std::map<std::string, std::string> & m) const
+bool ta_impl_t::is_valid_final(tchecker::ta::const_state_sptr_t const & s) const
+{
+  return tchecker::ta::is_valid_final(*_system, *s);
+}
+
+void ta_impl_t::attributes(tchecker::ta::const_state_sptr_t const & s, std::map<std::string, std::string> & m) const
 {
   tchecker::ta::attributes(*_system, *s, m);
 }
 
-void ta_t::attributes(tchecker::ta::const_transition_sptr_t const & t, std::map<std::string, std::string> & m) const
+void ta_impl_t::attributes(tchecker::ta::const_transition_sptr_t const & t, std::map<std::string, std::string> & m) const
 {
   tchecker::ta::attributes(*_system, *t, m);
 }
 
-tchecker::ta::system_t const & ta_t::system() const { return *_system; }
+void ta_impl_t::share(tchecker::ta::state_sptr_t & s) { _state_allocator.share(s); }
+
+void ta_impl_t::share(tchecker::ta::transition_sptr_t & t) { _transition_allocator.share(t); }
+
+tchecker::ta::system_t const & ta_impl_t::system() const { return *_system; }
+
+/* ta_t */
+
+tchecker::ta::system_t const & ta_t::system() const { return ts_impl().system(); }
+
+/* sharing_ta_t */
+
+tchecker::ta::system_t const & sharing_ta_t::system() const { return ts_impl().system(); }
 
 } // end of namespace ta
 

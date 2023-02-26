@@ -38,18 +38,6 @@ fi
 
 # Model
 
-echo "#clock:size:name
-#int:size:min:max:init:name
-#process:name
-#event:name
-#location:process:name{attributes}
-#edge:process:source:target:event:{attributes}
-#sync:events
-#   where
-#   attributes is a colon-separated list of key:value
-#   events is a colon-separated list of process@event
-"
-
 echo "
 # Model of the FDDI protocol inspired from:
 # The tool Kronos, C. Daws, A. Oliveiro, S. Tripakis and S. Yovine,
