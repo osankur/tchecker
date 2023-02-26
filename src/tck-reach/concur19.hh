@@ -71,15 +71,9 @@ public:
   */
   inline tchecker::refzg::state_t const & state() const { return *_state; }
 
-  /*!
-  \brief Accessor
-  \return Reference to the _accepting field
-  */
-  inline bool & is_accepting() { return this->_accepting; }
 
 private:
   tchecker::refzg::const_state_sptr_t _state; /*!< State of the local-time zone graph */
-  bool _accepting;
 };
 
 /*!

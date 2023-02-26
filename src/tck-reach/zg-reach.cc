@@ -87,7 +87,7 @@ public:
     return tchecker::zg::lexical_cmp(n1->state(), n2->state()) < 0;
   }
 };
-
+  
 /*!
  \class edge_lexical_less_t
  \brief Less-than ordering on edges based on lexical ordering
