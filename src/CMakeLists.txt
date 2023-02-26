@@ -103,7 +103,10 @@ add_executable(tck-reach
                ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-covreach.cc
                ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-covreach.hh
                ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-reach.cc
-               ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-reach.hh)
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-reach.hh
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-reach-counterexample.cc
+               ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-reach-counterexample.hh
+               )
 target_link_libraries(tck-reach libtchecker_static)
 set_property(TARGET tck-reach PROPERTY CXX_STANDARD 17)
 set_property(TARGET tck-reach PROPERTY CXX_STANDARD_REQUIRED ON)

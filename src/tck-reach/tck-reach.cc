@@ -18,6 +18,7 @@
 #include "tchecker/utils/log.hh"
 #include "zg-covreach.hh"
 #include "zg-reach.hh"
+#include "zg-reach-counterexample.hh"
 
 /*!
  \file tck-reach.cc
@@ -26,7 +27,7 @@
 
 static struct option long_options[] = {{"algorithm", required_argument, 0, 'a'},
                                        {"certificate", no_argument, 0, 'C'},
-                                       // {"cex", no_argument, 0, 'c'},
+                                       {"counterexample", no_argument, 0, 'c'},
                                        {"help", no_argument, 0, 'h'},
                                        {"labels", required_argument, 0, 'l'},
                                        {"search-order", no_argument, 0, 's'},
@@ -48,7 +49,7 @@ void usage(char * progname)
   std::cerr << "          concur19:  reachability algorithm with covering over the local-time zone graph" << std::endl;
   std::cerr << "          covreach:  reachability algorithm with covering over the zone graph" << std::endl;
   std::cerr << "   -C out_file   output a certificate (as a graph) in out_file" << std::endl;
-  // std::cerr << "   -c out_file   output reachability trace (if any) in out_file" << std::endl;
+  std::cerr << "   -c out_file   output reachability trace (if any) in out_file" << std::endl;
   std::cerr << "   -h            help" << std::endl;
   std::cerr << "   -l l1,l2,...  comma-separated list of searched labels" << std::endl;
   std::cerr << "   -s bfs|dfs    search order" << std::endl;
@@ -67,7 +68,7 @@ enum algorithm_t {
 static enum algorithm_t algorithm = ALGO_NONE; /*!< Selected algorithm */
 static bool help = false;                      /*!< Help flag */
 static std::string output_file = "";           /*!< Output file name */
-// static std::string cex_output_file = "";           /*!< Output file name */
+static std::string cex_output_file = "";       /*!< Cex file name */
 static std::string search_order = "bfs";       /*!< Search order */
 static std::string labels = "";                /*!< Searched labels */
 static std::size_t block_size = 10000;         /*!< Size of allocated blocks */
@@ -108,6 +109,9 @@ int parse_command_line(int argc, char * argv[])
         break;
       case 'C':
         output_file = optarg;
+        break;
+      case 'c':
+        cex_output_file = optarg;
         break;
       case 'h':
         help = true;
@@ -177,14 +181,45 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
   // graph
   if (output_file != "") {
     std::ofstream ofs{output_file};
-    if(stats.reachable()){
-      tchecker::tck_reach::zg_reach::dot_cex_output(ofs, *graph, sysdecl->name());
-    } else {
-      tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
-    }
+    tchecker::tck_reach::zg_reach::dot_output(ofs, *graph, sysdecl->name());
     ofs.close();
   }
 }
+
+/*!
+ \brief Perform reachability analysis
+ \param sysdecl : system declaration
+ \post statistics on reachability analysis of command-line specified labels in
+ the system declared by sysdecl have been output to standard output.
+ A certification has been output if required.
+*/
+void reach_counterexample(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysdecl)
+{
+  // auto && [stats, graph, cex] = tchecker::tck_reach::zg_reach_counterexample::run(sysdecl, labels, search_order, block_size, table_size);
+  auto && [stats, graph, cex] = tchecker::tck_reach::zg_reach_counterexample::run(sysdecl, labels, search_order, block_size, table_size);
+
+  // stats
+  std::map<std::string, std::string> m;
+  stats.attributes(m);
+  for (auto && [key, value] : m)
+    std::cout << key << " " << value << std::endl;
+
+  // graph
+  if (output_file != "") {
+    std::ofstream ofs{output_file};
+    tchecker::tck_reach::zg_reach_counterexample::dot_output(ofs, *graph, sysdecl->name());
+    ofs.close();
+  }
+
+  // graph
+  if (cex_output_file != "") {
+    std::ofstream ofs{cex_output_file};
+    tchecker::tck_reach::zg_reach_counterexample::dot_cex_output(ofs, *cex, sysdecl->name());
+    ofs.close();
+  }
+
+}
+
 
 /*!
  \brief Perform covering reachability analysis over the local-time zone graph
@@ -267,7 +302,11 @@ int main(int argc, char * argv[])
 
     switch (algorithm) {
     case ALGO_REACH:
-      reach(sysdecl);
+      if (cex_output_file != ""){
+        reach_counterexample(sysdecl);
+      } else {
+        reach(sysdecl);
+      }
       break;
     case ALGO_CONCUR19:
       concur19(sysdecl);

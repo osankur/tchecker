@@ -63,32 +63,29 @@ public:
   inline tchecker::zg::state_t const & state() const { return *_state; }
 
   /*!
-  \brief Accessor
-  \return Whether the node is unsafe
+  \brief Set accepting value of the node
   */
-  inline bool is_unsafe() { return this->_unsafe; }
+  inline void set_accepting(bool accepting) { }
 
-  /*!
-  \brief Set unsafe value of the node
-  */
-  inline void set_unsafe(bool unsafe) { this->_unsafe = unsafe; }
-
-
-  /*!
-  \brief Accessor
-  \return 
-  */
-  inline bool is_initial() { return this->_init; }
 
   /*!
   \brief Set initial value of the node
   */
-  inline void set_initial(bool init) { this->_init = init; }
+  inline void set_initial(bool init) { }
 
+  /*!
+  \brief Accessor
+  \return Whether the node is accepting
+  */
+  inline bool is_accepting() { return false; }
+
+  /*!
+  \brief Accessor
+  \return Whether the node is initial
+  */
+  inline bool is_initial() { return false; }
 
 private:
-  bool _unsafe;
-  bool _init;
   tchecker::zg::const_state_sptr_t _state; /*!< State of the zone graph */
 };
 
@@ -166,6 +163,7 @@ public:
    \note this keeps a pointer on zg
   */
   graph_t(std::shared_ptr<tchecker::zg::zg_t> const & zg, std::size_t block_size, std::size_t table_size);
+  ;
 
   /*!
    \brief Destructor
@@ -192,6 +190,7 @@ protected:
    \post attributes of edge e have been added to map m
   */
   virtual void attributes(tchecker::tck_reach::zg_reach::edge_t const & e, std::map<std::string, std::string> & m) const;
+
 private:
   std::shared_ptr<tchecker::zg::zg_t> _zg; /*!< Zone graph */
 };
@@ -204,16 +203,6 @@ private:
  \post graph g with name has been output to os
 */
 std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g, std::string const & name);
-
-
-/*!
- \brief Counterexample output
- \param os : output stream
- \param g : graph
- \param name : graph name
- \post The counterexample trace from an initial node to an unsafe node in graph g with name has been output to os
-*/
-std::ostream & dot_cex_output(std::ostream & os, tchecker::tck_reach::zg_reach::graph_t const & g, std::string const & name);
 
 /*!
  \class algorithm_t

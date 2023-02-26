@@ -405,8 +405,8 @@ public:
    \post attributes of node n have been added to map m
   */
   void attributes(node_sptr_t const & n, std::map<std::string, std::string> & m) const { 
-    if (n->is_unsafe()){
-      m["unsafe"] = "true";
+    if (n->is_accepting()){
+      m["accepting"] = "true";
     }
     if (n->is_initial()){
       m["initial"] = "true";
@@ -730,13 +730,6 @@ std::ostream & dot_output(std::ostream & os, GRAPH const & g, std::string const 
 {
   return tchecker::graph::dot_output<GRAPH, NODE_LE, EDGE_LE>(os, g, name);
 }
-
-template <class GRAPH>
-std::ostream & dot_cex_output(std::ostream & os, GRAPH const & g, std::string const & name)
-{
-  return tchecker::graph::dot_cex_output<GRAPH>(os, g, name);
-}
-
 
 } // end of namespace reachability
 

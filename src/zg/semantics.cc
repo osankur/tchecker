@@ -132,8 +132,16 @@ tchecker::state_status_t elapsed_semantics_t::previous(tchecker::dbm::db_t * dbm
   }
 
   for (auto c : clkreset){
-    tchecker::dbm::free(dbm, dim, c.left_id());
+    if (c.left_id() != tchecker::REFCLOCK_ID){
+      tchecker::dbm::free(dbm, dim, c.left_id()+1);
+    }    
+    std::cout << "After free clock " << c.left_id() << "\n";
   }
+  if(clkreset.size()>0){
+    tchecker::dbm::output_matrix(std::cout, dbm, dim);
+    std::cout << "\n";
+  }
+
 
   if (tchecker::dbm::constrain(dbm, dim, guard) == tchecker::dbm::EMPTY)
     return tchecker::STATE_CLOCKS_GUARD_VIOLATED;

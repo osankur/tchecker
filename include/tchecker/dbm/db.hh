@@ -71,6 +71,13 @@ static_assert(tchecker::dbm::LE_ZERO != tchecker::dbm::LT_ZERO, "");
 static_assert(tchecker::dbm::LT_ZERO != tchecker::dbm::LT_INFINITY, "");
 static_assert(tchecker::dbm::LE_ZERO != tchecker::dbm::LT_INFINITY, "");
 
+class overflow : public std::exception {
+  public:
+  const char * what () {
+    return "value out of bounds";
+  }
+};
+
 /*!
  \brief Build a difference bound
  \param cmp : a comparator
@@ -83,7 +90,7 @@ inline tchecker::dbm::db_t db(enum tchecker::dbm::comparator_t cmp, tchecker::in
 {
 #if !defined(DBM_UNSAFE)
   if ((value < MIN_VALUE) || (value > MAX_VALUE))
-    throw std::invalid_argument("value out of bounds");
+    throw overflow();
 #endif // DBM_UNSAFE
   return ((value << 1) | cmp);
 }

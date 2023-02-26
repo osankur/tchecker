@@ -142,7 +142,7 @@ private:
 
       if (ts.satisfies(node->state_ptr(), labels)) {
         stats.reachable() = true;
-        node->set_unsafe(true);
+        node->set_accepting(true);
         break;
       }
 

@@ -73,13 +73,13 @@ public:
 
   /*!
   \brief Accessor
-  \return Reference to the _unsafe field
+  \return Reference to the _accepting field
   */
-  inline bool & unsafe() { return this->_unsafe; }
+  inline bool & is_accepting() { return this->_accepting; }
 
 private:
   tchecker::refzg::const_state_sptr_t _state; /*!< State of the local-time zone graph */
-  bool _unsafe;
+  bool _accepting;
 };
 
 /*!

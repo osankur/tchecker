@@ -639,22 +639,6 @@ std::ostream & output(std::ostream & os, tchecker::dbm::db_t const * dbm, tcheck
 int lexical_cmp(tchecker::dbm::db_t const * dbm1, tchecker::clock_id_t dim1, tchecker::dbm::db_t const * dbm2,
                 tchecker::clock_id_t dim2);
 
-/*!
- \brief Constrains the dbm to a single valuation that belongs to the given dbm, possibly after scaling it by factor.
- \param dbm : a dbm
- \param dim : dimension of dbm
- \param factor : constant by which the dbm was scaled.
- \pre dbm is not nullptr (checked by assertion)
- dbm is a dim*dim array of difference bounds
- dbm is consistent (checked by assertion)
- dbm is tight (checked by assertion)
- dim >= 1 (checked by assertion).
- factor = 1.
- \post dbm was scaled by factor and represents a single valuation.
- */
-
-void pick_valuation(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, int & factor);
-
 } // end of namespace dbm
 
 } // end of namespace tchecker
