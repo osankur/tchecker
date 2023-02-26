@@ -1,0 +1,307 @@
+#ifndef TCHECKER_ZG_REACH_COUNTEREXAMPLE_HH
+#define TCHECKER_ZG_REACH_COUNTEREXAMPLE_HH
+#include <memory>
+#include <ostream>
+#include <string>
+#include <tuple>
+
+#include "tchecker/algorithms/reach/algorithm.hh"
+#include "tchecker/algorithms/reach/stats.hh"
+#include "tchecker/graph/reachability_graph.hh"
+#include "tchecker/parsing/declaration.hh"
+#include "tchecker/syncprod/vedge.hh"
+#include "tchecker/utils/shared_objects.hh"
+#include "tchecker/waiting/waiting.hh"
+#include "tchecker/zg/state.hh"
+#include "tchecker/zg/transition.hh"
+#include "tchecker/zg/zg.hh"
+
+namespace tchecker {
+
+namespace tck_reach {
+
+namespace zg_reach_counterexample {
+
+/*!
+ \class node_t
+ \brief Node of the reachability graph of a zone graph
+ */
+class node_t : public tchecker::waiting::element_t {
+public:
+  /*!
+   \brief Constructor
+   \param s : a zone graph state
+   \post this node keeps a shared pointer to s
+   */
+  node_t(tchecker::zg::state_sptr_t const & s);
+
+  /*!
+   \brief Constructor
+   \param s : a zone graph state
+   \post this node keeps a shared pointer to s
+   */
+  node_t(tchecker::zg::const_state_sptr_t const & s);
+
+  /*!
+  \brief Accessor
+  \return shared pointer to zone graph state in this node
+  */
+  inline tchecker::zg::const_state_sptr_t state_ptr() const { return _state; }
+
+  /*!
+  \brief Accessor
+  \return zone graph state in this node
+  */
+  inline tchecker::zg::state_t const & state() const { return *_state; }
+
+
+  /*!
+  \brief Accessor
+  \return Whether the node is accepting
+  */
+  inline bool is_accepting() { return this->_accepting; }
+
+  /*!
+  \brief Set accepting value of the node
+  */
+  inline void set_accepting(bool accepting) { this->_accepting = accepting; }
+
+
+  /*!
+  \brief Accessor
+  \return 
+  */
+  inline bool is_initial() { return this->_init; }
+
+  /*!
+  \brief Set initial value of the node
+  */
+  inline void set_initial(bool init) { this->_init = init; }
+
+
+private:
+  bool _accepting;
+  bool _init;
+  tchecker::zg::const_state_sptr_t _state; /*!< State of the zone graph */
+};
+
+/*!
+\class node_hash_t
+\brief Hash functor for nodes
+*/
+class node_hash_t {
+public:
+  /*!
+  \brief Hash function
+  \param n : a node
+  \return hash value for n
+  */
+  std::size_t operator()(tchecker::tck_reach::zg_reach_counterexample::node_t const & n) const;
+};
+
+/*!
+\class node_equal_to_t
+\brief Equality check functor for nodes
+*/
+class node_equal_to_t {
+public:
+  /*!
+  \brief Equality predicate
+  \param n1 : a node
+  \param n2 : a node
+  \return true if n1 and n2 are equal (i.e. have same zone graph state), false otherwise
+  */
+  bool operator()(tchecker::tck_reach::zg_reach_counterexample::node_t const & n1, tchecker::tck_reach::zg_reach_counterexample::node_t const & n2) const;
+};
+
+/*!
+ \class edge_t
+ \brief Edge of the reachability graph of a zone graph
+*/
+class edge_t {
+public:
+  /*!
+   \brief Constructor
+   \param t : a zone graph transition
+   \post this node keeps a shared pointer on the vedge in t
+  */
+  edge_t(tchecker::zg::transition_t const & t);
+  edge_t(tchecker::zg::shared_transition_t const & t);
+
+  /*!
+   \brief Accessor
+   \return zone graph vedge in this edge
+  */
+  inline tchecker::vedge_t const & vedge() const { return *_vedge; }
+
+
+  /*!
+   \brief Accessor
+   \return this transition's target invariant container
+   */
+  inline tchecker::clock_constraint_container_t const & src_invariant_container() const { return _src_invariant; }
+
+
+  /*!
+   \brief Accessor
+   \return this transition's guard container
+   */
+  inline tchecker::clock_constraint_container_t const & guard_container() const { return _guard; }
+
+  /*!
+   \brief Accessor
+   \return this transition's reset container
+   */
+  inline tchecker::clock_reset_container_t const & reset_container() const { return _reset; }
+
+  /*!
+   \brief Accessor
+   \return this transition's target invariant container
+   */
+  inline tchecker::clock_constraint_container_t const & tgt_invariant_container() const { return _tgt_invariant; }
+
+  // Range accessors
+
+  /*!
+   \brief Accessor
+   \return this transitions's source invariant
+   */
+  tchecker::range_t<tchecker::clock_constraint_container_const_iterator_t> src_invariant() const;
+
+
+  /*!
+   \brief Accessor
+   \return shared pointer to the zone graph vedge in this edge
+  */
+  inline tchecker::intrusive_shared_ptr_t<tchecker::shared_vedge_t const> vedge_ptr() const { return _vedge; }
+
+private:
+  const tchecker::clock_constraint_container_t _src_invariant; /*!< Source invariant */
+  const tchecker::clock_constraint_container_t _guard;         /*!< Guard */
+  const tchecker::clock_reset_container_t _reset;              /*!< Reset */
+  const tchecker::clock_constraint_container_t _tgt_invariant; /*!< Target invariant */
+  tchecker::intrusive_shared_ptr_t<tchecker::shared_vedge_t const> _vedge; /*!< Tuple of edges */
+};
+
+/*!
+ \class graph_t
+ \brief Reachability graph over the zone graph
+*/
+class graph_t : public tchecker::graph::reachability::graph_t<
+                    tchecker::tck_reach::zg_reach_counterexample::node_t, tchecker::tck_reach::zg_reach_counterexample::edge_t,
+                    tchecker::tck_reach::zg_reach_counterexample::node_hash_t, tchecker::tck_reach::zg_reach_counterexample::node_equal_to_t> {
+public:
+  /*!
+   \brief Constructor
+   \param zg : zone graph
+   \param block_size : number of objects allocated in a block
+   \param table_size : size of hash table
+   \note this keeps a pointer on zg
+  */
+  graph_t(std::shared_ptr<tchecker::zg::sharing_zg_t> const & zg, std::size_t block_size, std::size_t table_size);
+
+public:
+  /*!
+   \brief Constructor
+   \param zg : zone graph
+   \param block_size : number of objects allocated in a block
+   \param table_size : size of hash table
+   \note this keeps a pointer on zg
+  */
+  graph_t(std::shared_ptr<tchecker::zg::zg_t> const & zg, std::size_t block_size, std::size_t table_size);
+
+  /*!
+   \brief Destructor
+  */
+  virtual ~graph_t();
+
+  using tchecker::graph::reachability::graph_t<tchecker::tck_reach::zg_reach_counterexample::node_t, tchecker::tck_reach::zg_reach_counterexample::edge_t,
+                                               tchecker::tck_reach::zg_reach_counterexample::node_hash_t,
+                                               tchecker::tck_reach::zg_reach_counterexample::node_equal_to_t>::attributes;
+
+protected:
+  /*!
+   \brief Accessor to node attributes
+   \param n : a node
+   \param m : a map (key, value) of attributes
+   \post attributes of node n have been added to map m
+  */
+  virtual void attributes(tchecker::tck_reach::zg_reach_counterexample::node_t const & n, std::map<std::string, std::string> & m) const;
+
+  /*!
+   \brief Accessor to edge attributes
+   \param e : an edge
+   \param m : a map (key, value) of attributes
+   \post attributes of edge e have been added to map m
+  */
+  virtual void attributes(tchecker::tck_reach::zg_reach_counterexample::edge_t const & e, std::map<std::string, std::string> & m) const;
+private:
+  std::shared_ptr<tchecker::zg::sharing_zg_t> _zg; /*!< Zone graph */
+};
+
+/*!
+ \brief Graph output
+ \param os : output stream
+ \param g : graph
+ \param name : graph name
+ \post graph g with name has been output to os
+*/
+std::ostream & dot_output(std::ostream & os, tchecker::tck_reach::zg_reach_counterexample::graph_t const & g, std::string const & name);
+
+
+
+
+/**
+ * @brief Execution of the following form:
+ * (states[i],valuations[2i],valuations[2i+1]) ---edges[i]---> (states[i+1], valuations[2i+2],valuations[2i+3])
+ * where valuations[2i] is the valuation at which statse[i] is entered, and valuations[2i+1] is that reached after a delay,
+ * and immediately before taking edges[i].
+ * zones[i] is a string representation of the unextrapolated zone reached at step i.
+ */
+struct counterexample_trace_t {
+  std::vector<std::map<std::string, std::string>> state_attributes;
+  std::vector<std::map<std::string, std::string>> edge_attributes;
+};
+
+
+/*!
+ \brief Counterexample output
+ \param os : output stream
+ \param cex : cex
+ \param name : graph name
+ \post The counterexample trace from an initial node to an accepting node in graph g with name has been output to os
+*/
+std::ostream & dot_cex_output(std::ostream & os, tchecker::tck_reach::zg_reach_counterexample::counterexample_trace_t const & cex, std::string const & name);
+
+/*!
+ \class algorithm_t
+ \brief Reachability algorithm over the zone graph
+*/
+class algorithm_t
+    : public tchecker::algorithms::reach::algorithm_t<tchecker::zg::sharing_zg_t, tchecker::tck_reach::zg_reach_counterexample::graph_t> {
+public:
+  using tchecker::algorithms::reach::algorithm_t<tchecker::zg::sharing_zg_t, tchecker::tck_reach::zg_reach_counterexample::graph_t>::algorithm_t;
+};
+
+
+
+/*!
+ \brief Run reachability algorithm on the zone graph of a system
+ \param sysdecl : system declaration
+ \param labels : comma-separated string of labels
+ \param search_order : search order
+ \param block_size : number of elements allocated in one block
+ \param table_size : size of hash tables
+ \pre labels must appear as node attributes in sysdecl
+ search_order must be either "dfs" or "bfs"
+ \return statistics on the run and the reachability graph
+ */
+std::tuple<tchecker::algorithms::reach::stats_t, std::shared_ptr<tchecker::tck_reach::zg_reach_counterexample::graph_t>, std::shared_ptr<tchecker::tck_reach::zg_reach_counterexample::counterexample_trace_t>>
+run(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysdecl, std::string const & labels = "",
+    std::string const & search_order = "bfs", std::size_t block_size = 10000, std::size_t table_size = 65536);
+
+
+}
+}
+}
+#endif
