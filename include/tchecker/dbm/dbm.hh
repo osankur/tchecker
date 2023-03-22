@@ -304,6 +304,7 @@ bool is_le(tchecker::dbm::db_t const * dbm1, tchecker::dbm::db_t const * dbm2, t
 void reset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
            tchecker::integer_t value);
 
+
 /*!
  \brief Reset from a clock reset container
  \param dbm : a dbm
@@ -385,6 +386,27 @@ void reset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker:
                   tchecker::integer_t value);
 
 /*!
+ \brief Free a clock
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= y < dim (checked by assertion)
+ 0 <= value (checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t (checked by assertion)
+ \post dbm has been updated by removing all constraints from x
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ */
+void free(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x);
+
+
+/*!
  \brief Open up (delay)
  \param dbm : a dbm
  \param dim : dimension of dbm
@@ -397,6 +419,129 @@ void reset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker:
  dbm is tight.
  */
 void open_up(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
+
+
+/*!
+ \brief Open down (delay)
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ \post all lower bounds on clocks in dbm are 0.
+ dbm is tight.
+ */
+void open_down(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
+
+/*!
+ \brief Weakest predecessor of the reset
+ 
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \param y : right-value clock
+ \param value : a value
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= y < dim (checked by assertion)
+ 0 <= value (checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t (checked by assertion)
+ \post dbm is the weakest precondition of the reset.
+ \note assertion failure if the predecessor set is empty
+ */
+void unreset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
+           tchecker::integer_t value);
+
+/*!
+ \brief Weakest predecessor of the reset
+ 
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param resets : 
+ \param resets : a clock reset container
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ all resets are expressed over system clocks
+ \post dbm is the weakeast precondition of the reset container.
+ \note assertion failure if the predecessor set is empty
+ */
+void unreset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_reset_container_t const & resets);
+
+/*!
+ \brief Weakest precondition of a reset of a clock to a constant
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \param value : a value
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= value *checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t
+ \post dbm has been updated to free_x( dbm /\\ x == value )
+ dbm is consistent.
+ dbm is tight.
+ \note assertion failure if the predecessor set is empty
+*/
+void unreset_to_value(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::integer_t value);
+
+/*!
+ \brief Weakest precondition of a reset of a clock to a clock
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \param y : right-value clock
+ \param value : a value
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= value *checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t
+ \post dbm has been updated to free_x( dbm /\\ x == y )
+ dbm is consistent.
+ dbm is tight.
+ \note assertion failure if the predecessor set is empty
+*/
+void unreset_to_clock(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y);
+
+/*!
+ \brief Weakest precondition of a reset of a clock to a clock
+ \param dbm : a dbm
+ \param dim : dimension of dbm
+ \param x : left-value clock
+ \param y : right-value clock
+ \param value : a value
+ \pre dbm is not nullptr (checked by assertion)
+ dbm is a dim*dim array of difference bounds
+ dbm is consistent (checked by assertion)
+ dbm is tight (checked by assertion)
+ dim >= 1 (checked by assertion).
+ 0 <= x < dim (checked by assertion)
+ 0 <= value *checked by assertion)
+ `<= value` can be represented by tchecker::dbm::db_t
+ \post dbm has been updated to free_x( dbm /\\ x == y + value )
+ dbm is consistent.
+ dbm is tight.
+ \note assertion failure if the predecessor set is empty
+*/
+void unreset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
+                    tchecker::integer_t value);
+
 
 /*!
  \brief Intersection

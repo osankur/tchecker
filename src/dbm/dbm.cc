@@ -370,6 +370,24 @@ void reset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker:
   assert(tchecker::dbm::is_tight(dbm, dim));
 }
 
+void free(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x){
+  assert(dbm != nullptr);
+  assert(dim >= 1);
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+  assert(x < dim);
+
+  DBM(x, 0) = tchecker::dbm::LT_INFINITY;
+  DBM(0, x) = tchecker::dbm::db(tchecker::dbm::LE, 0);
+  for (tchecker::clock_id_t i = 0; i < dim; ++i) {
+    if (i == x) continue;
+    DBM(x, i) = tchecker::dbm::LT_INFINITY;
+    DBM(i, x) = DBM(i,0);
+  }
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+}
+
 void open_up(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim)
 {
   assert(dbm != nullptr);
@@ -383,6 +401,27 @@ void open_up(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim)
   assert(tchecker::dbm::is_consistent(dbm, dim));
   assert(tchecker::dbm::is_tight(dbm, dim));
 }
+
+void open_down(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim)
+{
+  assert(dbm != nullptr);
+  assert(dim >= 1);
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+
+  for (tchecker::clock_id_t i = 1; i < dim; ++i){
+    DBM(0, i) = tchecker::dbm::db(tchecker::dbm::LE, 0);
+    for (tchecker::clock_id_t j = 1; j < dim; ++j){
+      if (DBM(j,i) < DBM(0,i)){
+        DBM(0,i) = DBM(j,i);
+      }
+    }
+  }
+
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+}
+
 
 enum tchecker::dbm::status_t intersection(tchecker::dbm::db_t * dbm, tchecker::dbm::db_t const * dbm1,
                                           tchecker::dbm::db_t const * dbm2, tchecker::clock_id_t dim)
@@ -839,6 +878,88 @@ int lexical_cmp(tchecker::dbm::db_t const * dbm1, tchecker::clock_id_t dim1, tch
   assert(dim2 >= 1);
   return tchecker::lexical_cmp(dbm1, dbm1 + dim1 * dim1, dbm2, dbm2 + dim2 * dim2, tchecker::dbm::db_cmp);
 }
+
+void unreset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
+           tchecker::integer_t value)
+{
+  if (y == 0)
+    unreset_to_value(dbm, dim, x, value);
+  else if (value == 0)
+    unreset_to_clock(dbm, dim, x, y);
+  else
+    unreset_to_sum(dbm, dim, x, y, value);
+}
+
+void unreset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_reset_container_t const & resets)
+{
+  for (auto r = resets.crbegin(); r != resets.crend(); r++) {
+    tchecker::clock_id_t lid = (r->left_id() == tchecker::REFCLOCK_ID ? 0 : r->left_id() + 1);
+    tchecker::clock_id_t rid = (r->right_id() == tchecker::REFCLOCK_ID ? 0 : r->right_id() + 1);
+    tchecker::dbm::unreset(dbm, dim, lid, rid, r->value());
+  }
+}
+void unreset_to_value(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::integer_t value)
+{
+  assert(dbm != nullptr);
+  assert(dim >= 1);
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+  assert(x < dim);
+  assert(0 <= value);
+
+  tchecker::dbm::constrain(dbm, dim, x, 0, tchecker::dbm::LE, value);
+  tchecker::dbm::constrain(dbm, dim, 0, x, tchecker::dbm::LE, -value);
+  tchecker::dbm::free(dbm, dim, x);
+
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+}
+
+void unreset_to_clock(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y)
+{
+  assert(dbm != nullptr);
+  assert(dim >= 1);
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+  assert(x < dim);
+  assert(0 < y);
+  assert(y < dim);
+
+  tchecker::dbm::constrain(dbm, dim, x, y, tchecker::dbm::LE, 0);
+  tchecker::dbm::constrain(dbm, dim, y, x, tchecker::dbm::LE, 0);
+  if (x != y) tchecker::dbm::free(dbm, dim, x);
+
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+}
+
+void unreset_to_sum(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::clock_id_t x, tchecker::clock_id_t y,
+                  tchecker::integer_t value)
+{
+  assert(dbm != nullptr);
+  assert(dim >= 1);
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+  assert(x < dim);
+  assert(y < dim);
+  assert(0 <= value);
+
+  if (x != y) {
+    tchecker::dbm::constrain(dbm, dim, x, y, tchecker::dbm::LE, value);
+    tchecker::dbm::constrain(dbm, dim, y, x, tchecker::dbm::LE, -value);
+    tchecker::dbm::free(dbm, dim, x);
+  } else {
+    for (tchecker::clock_id_t y = 0; y < dim; ++y) {
+      DBM(x, y) = tchecker::dbm::add(DBM(x, y), -value);
+      DBM(y, x) = tchecker::dbm::add(DBM(y, x), value);
+    }
+    DBM(x, x) = tchecker::dbm::LE_ZERO;    
+    tchecker::dbm::tighten(dbm, dim);
+  }
+  assert(tchecker::dbm::is_consistent(dbm, dim));
+  assert(tchecker::dbm::is_tight(dbm, dim));
+}
+
 
 } // end of namespace dbm
 

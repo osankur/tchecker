@@ -1736,3 +1736,182 @@ TEST_CASE("Zone inclusion w.r.t. abstraction aLU from LICS12", "[dbm]")
     REQUIRE(tchecker::dbm::is_alu_le(dbm_positive, dbm, dim, l_inf, u_inf));
   }
 }
+
+TEST_CASE("unreset DBM", "[dbm]")
+{
+
+  tchecker::clock_id_t dim = 4;
+  tchecker::dbm::db_t dbm[dim * dim];
+  tchecker::dbm::universal_positive(dbm, dim);
+
+  // x1 > 2 & 1 <= x2 < 4 & x1-x2 > 1 & x3-x2 >= 5 & x3-x1 <= 8
+
+  DBM(0, 1) = tchecker::dbm::db(tchecker::dbm::LT, -2);
+  DBM(0, 2) = tchecker::dbm::db(tchecker::dbm::LE, -1);
+  DBM(2, 0) = tchecker::dbm::db(tchecker::dbm::LT, 4);
+  DBM(2, 1) = tchecker::dbm::db(tchecker::dbm::LT, -1);
+  DBM(2, 3) = tchecker::dbm::db(tchecker::dbm::LE, -5);
+  DBM(3, 1) = tchecker::dbm::db(tchecker::dbm::LE, 8);
+
+  tchecker::dbm::tighten(dbm, dim);
+
+  tchecker::dbm::db_t dbm2[dim * dim];
+  memcpy(dbm2, dbm, dim * dim * sizeof(tchecker::dbm::db_t));
+
+  // dbm is:
+  // <=0  <-2  <=-1  <=-6
+  // <inf <=0  <inf  <inf
+  // <4   <-1  <=0   <=-5
+  // <inf <=8  <inf  <=0
+
+  SECTION("(un)reset to zero")
+  {
+    tchecker::integer_t const value = 0;
+    tchecker::clock_id_t const x = 1;
+
+    tchecker::dbm::reset(dbm, dim, x, 0, value);
+    tchecker::dbm::unreset(dbm, dim, x, 0, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset to positive value")
+  {
+    tchecker::integer_t const value = 3;
+    tchecker::clock_id_t const x = 2;
+
+    tchecker::dbm::reset(dbm, dim, x, 0, value);
+    tchecker::dbm::unreset(dbm, dim, x, 0, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset to clock (1st)")
+  {
+    tchecker::clock_id_t const x = 3;
+    tchecker::clock_id_t const y = 1;
+
+    tchecker::dbm::reset(dbm, dim, x, y, 0);
+    tchecker::dbm::unreset(dbm, dim, x, y, 0);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset to clock (2nd)")
+  {
+    tchecker::clock_id_t const x = 2;
+    tchecker::clock_id_t const y = 3;
+
+    tchecker::dbm::reset(dbm, dim, x, y, 0);
+    tchecker::dbm::unreset(dbm, dim, x, y, 0);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to itself")
+  {
+    tchecker::dbm::reset(dbm, dim, 1, 1, 0);
+    tchecker::dbm::unreset(dbm, dim, 1, 1, 0);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to increment (1st)")
+  {
+    tchecker::clock_id_t const x = 1;
+    tchecker::integer_t const value = 1;
+
+    tchecker::dbm::reset(dbm, dim, x, x, value);
+    tchecker::dbm::unreset(dbm, dim, x, x, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to increment (2nd)")
+  {
+    tchecker::clock_id_t const x = 2;
+    tchecker::integer_t const value = 10;
+
+    tchecker::dbm::reset(dbm, dim, x, x, value);
+    tchecker::dbm::unreset(dbm, dim, x, x, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to increment (3rd)")
+  {
+    tchecker::clock_id_t const x = 3;
+    tchecker::integer_t const value = 7;
+
+    tchecker::dbm::reset(dbm, dim, x, x, value);
+    tchecker::dbm::unreset(dbm, dim, x, x, value);
+    
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to sum (1st)")
+  {
+    tchecker::clock_id_t const x = 2;
+    tchecker::clock_id_t const y = 3;
+    tchecker::integer_t const value = 1;
+
+    tchecker::dbm::reset(dbm, dim, x, y, value);
+    tchecker::dbm::unreset(dbm, dim, x, y, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to sum (2nd)")
+  {
+    tchecker::clock_id_t const x = 3;
+    tchecker::clock_id_t const y = 1;
+    tchecker::integer_t const value = 8;
+
+    tchecker::dbm::reset(dbm, dim, x, y, value);
+    tchecker::dbm::unreset(dbm, dim, x, y, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+  SECTION("(un)reset clock to sum (3nd)")
+  {
+    tchecker::clock_id_t const x = 1;
+    tchecker::clock_id_t const y = 2;
+    tchecker::integer_t const value = 190;
+
+    tchecker::dbm::reset(dbm, dim, x, y, value);
+    tchecker::dbm::unreset(dbm, dim, x, y, value);
+
+    REQUIRE(tchecker::dbm::is_tight(dbm, dim));
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+  SECTION("reset from clock resets container")
+  {
+    // NB: constraints are over systems clocks. The reference clock is
+    // tchecker::REFCLOCK_ID. Clocks are indexed 0..dim-2 and correspond to
+    // indices 1..dim-1 in the DBM
+    tchecker::clock_reset_container_t resets;
+    resets.push_back(tchecker::clock_reset_t{2, tchecker::REFCLOCK_ID, 5});
+    resets.push_back(tchecker::clock_reset_t{1, 0, 0});
+    resets.push_back(tchecker::clock_reset_t{0, 2, 2});
+    resets.push_back(tchecker::clock_reset_t{0, 0, 2});
+    resets.push_back(tchecker::clock_reset_t{1, 1, 1});
+    resets.push_back(tchecker::clock_reset_t{1, 2, 1});
+
+    tchecker::dbm::reset(dbm, dim, resets);
+    tchecker::dbm::unreset(dbm, dim, resets);
+
+    REQUIRE(tchecker::dbm::is_le(dbm2, dbm, dim));
+  }
+
+}
