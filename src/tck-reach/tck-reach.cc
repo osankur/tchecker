@@ -18,6 +18,7 @@
 #include "tchecker/utils/log.hh"
 #include "zg-covreach.hh"
 #include "zg-reach.hh"
+#include "counter_example.hh"
 
 /*!
  \file tck-reach.cc
@@ -199,10 +200,13 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
     tchecker::tck_reach::zg_reach::dot_output(*os, *graph, sysdecl->name());
   else if ((certificate == CERTIFICATE_SYMBOLIC_RUN) && stats.reachable()) {
     std::unique_ptr<tchecker::tck_reach::zg_reach::cex::symbolic::cex_t> cex{
-        tchecker::tck_reach::zg_reach::cex::symbolic::counter_example(*graph)};
+        tchecker::tck_reach::zg_reach::cex::symbolic::counter_example(*graph)};        
     if (cex->empty())
       throw std::runtime_error("Unable to compute a symbolic counter example");
     tchecker::tck_reach::zg_reach::cex::symbolic::dot_output(*os, *cex, sysdecl->name());
+    std::shared_ptr<tchecker::ta::system_t const> system{new tchecker::ta::system_t{*sysdecl}};
+    tchecker::tck_reach::generate_concrete_trace(*cex, system);
+
   }
 }
 

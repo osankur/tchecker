@@ -436,7 +436,7 @@ void open_up(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
 void open_down(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim);
 
 /*!
- \brief Weakest predecessor of the reset
+ \brief Weakest precondition of a reset
  
  \param dbm : a dbm
  \param dim : dimension of dbm
@@ -459,7 +459,7 @@ void unreset(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::cloc
            tchecker::integer_t value);
 
 /*!
- \brief Weakest predecessor of the reset
+ \brief Weakest precondition of a reset container
  
  \param dbm : a dbm
  \param dim : dimension of dbm

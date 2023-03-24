@@ -103,6 +103,7 @@ set_property(TARGET tck-liveness PROPERTY CXX_STANDARD_REQUIRED ON)
 add_executable(tck-reach
   ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/concur19.hh
   ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/concur19.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/counter_example.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/tck-reach.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-covreach.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/tck-reach/zg-covreach.hh
