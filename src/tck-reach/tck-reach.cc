@@ -204,9 +204,6 @@ void reach(std::shared_ptr<tchecker::parsing::system_declaration_t> const & sysd
     if (cex->empty())
       throw std::runtime_error("Unable to compute a symbolic counter example");
     tchecker::tck_reach::zg_reach::cex::symbolic::dot_output(*os, *cex, sysdecl->name());
-    std::shared_ptr<tchecker::ta::system_t const> system{new tchecker::ta::system_t{*sysdecl}};
-    tchecker::tck_reach::generate_concrete_trace(*cex, system);
-
   }
 }
 
