@@ -138,16 +138,16 @@ typedef std::vector<double> valuation;
  */
 class rational_dbm_t {
 public:
-  rational_dbm_t(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::integer_t factor = 1) : dbm(dbm), dim(dim), factor(factor){}
+  rational_dbm_t(tchecker::dbm::db_t * dbm, tchecker::clock_id_t dim, tchecker::integer_t factor = 1) : _dbm(dbm), _dim(dim), _factor(factor){}
   rational_dbm_t(const tchecker::tck_reach::rational_dbm_t & rdbm) {
     this->operator=(rdbm);
   }
   void operator=(const tchecker::tck_reach::rational_dbm_t & rdbm){
-    this->factor = rdbm.factor;
-    this->dim = rdbm.dim;
-    for (tchecker::clock_id_t c = 0; c < dim; c++) {
-      for (tchecker::clock_id_t d = 0; d < dim; d++) {
-        this->dbm[d*dim +c] = rdbm.dbm[d*dim + c];
+    this->_factor = rdbm.factor();
+    this->_dim = rdbm.dimension();
+    for (tchecker::clock_id_t c = 0; c < _dim; c++) {
+      for (tchecker::clock_id_t d = 0; d < _dim; d++) {
+        this->_dbm[d*_dim +c] = rdbm.dbm()[d*_dim + c];
       }
     }
   }
@@ -187,34 +187,37 @@ public:
    */
   void simplify();
 
-  tchecker::dbm::db_t * dbm;
-  tchecker::clock_id_t dim;
-  tchecker::integer_t factor;
+  const tchecker::dbm::db_t * dbm() const { return _dbm; }
+  tchecker::dbm::db_t * dbm(){ return _dbm; }
+  tchecker::clock_id_t dimension() const { return _dim; }
+  tchecker::integer_t factor() const { return _factor; }
+
 private:  
+  tchecker::dbm::db_t * _dbm;
+  tchecker::clock_id_t _dim;
+  tchecker::integer_t _factor;
   static const tchecker::integer_t SCALE_FACTOR = 10;
 };
 
 
 /**
  * \brief Compute a valuation that is a predecessor of val through transition, and that is inside predecessor_zone.
- * \param val : a rational dbm
+ * \param val : a rational dbm representing a single valuation
  * \param transition : the transition through which predecessor is to be computed
  * \param tgt_delayed_allowed : whether delaying is allowed in the target location of the transition
  * \param predecessor_zone : zone in which a predecessor is to be found
- * \param concrete_predecessor : a rational dbm in which a predecessor of val will be written
  * \param concrete_predecessor_reset : a rational dbm in which will contain the image of concrete_predecessor
  * by the reset of transition.
  * \pre val admits a predecessor inside predecessor_zone
  * \pre val represents a single valuation (checked by assertion)
- * \post concrete_predecessor |= g /\ predecessor_zone, concrete_predecessor_reset = concrete_predecessor[R := 0], 
+ * \post val |= g /\ predecessor_zone, concrete_predecessor_reset = val[R := 0], 
  * and exists d, val = concrete_predecessor_reset + d
  * where g is the guard, and R the reset of the transition; and such that if !tgt_delay_allowed, then d=0.
  */
-void compute_concrete_predecessor(const tchecker::tck_reach::rational_dbm_t & val,
-                                  const tchecker::zg::transition_t & transition, bool tgt_delay_allowed,
-                                  const tchecker::dbm::db_t * predecessor_zone,
-                                  tchecker::tck_reach::rational_dbm_t & concrete_predecessor,
-                                  tchecker::tck_reach::rational_dbm_t & concrete_predecessor_reset);
+void concrete_predecessor(tchecker::tck_reach::rational_dbm_t & val,
+                          const tchecker::zg::transition_t & transition, bool tgt_delay_allowed,
+                          const tchecker::dbm::db_t * predecessor_zone,
+                          tchecker::tck_reach::rational_dbm_t & concrete_predecessor_reset);
 
 /*!
   \brief Generates a vector of rational valuations from a symbolic counterexample.
@@ -244,7 +247,7 @@ generate_concrete_trace(CEX & cex, std::shared_ptr<tchecker::ta::system_t const>
     auto prev_n = cex.edge_src(e);
     tchecker::zg::transition_t const & transition = e->transition();
     bool tgt_delay_allowed = tchecker::ta::delay_allowed(*system, *n->state_ptr()->vloc_ptr());
-    compute_concrete_predecessor(vrdbm, transition, tgt_delay_allowed, prev_n->state_ptr()->zone().dbm(), vrdbm, vrdbm_reset);
+    concrete_predecessor(vrdbm, transition, tgt_delay_allowed, prev_n->state_ptr()->zone().dbm(), vrdbm_reset);
     concrete_trace.push_back(vrdbm_reset.get_valuation());
     concrete_trace.push_back(vrdbm.get_valuation());
     n = prev_n;
@@ -257,7 +260,7 @@ generate_concrete_trace(CEX & cex, std::shared_ptr<tchecker::ta::system_t const>
   delete[] vdbm_reset;
   delete[] vdbm;
   std::reverse(concrete_trace.begin(), concrete_trace.end());
-
+ 
   return concrete_trace;
 }
 
