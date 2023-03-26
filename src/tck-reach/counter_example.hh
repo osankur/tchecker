@@ -18,7 +18,7 @@
 #include "tchecker/syncprod/vloc.hh"
 #include "tchecker/zg/path.hh"
 #include "tchecker/zg/zg.hh"
-
+#include "tchecker/utils/log.hh"
 /*!
  \file counter_example.hh
  \brief Generation of counter examples
@@ -239,28 +239,34 @@ generate_concrete_trace(CEX & cex, std::shared_ptr<tchecker::ta::system_t const>
   memcpy(vdbm, cex.last()->state_ptr()->zone().dbm(), dim * dim * sizeof(tchecker::dbm::db_t));
   tchecker::tck_reach::rational_dbm_t vrdbm(vdbm, dim, 1);
   tchecker::tck_reach::rational_dbm_t vrdbm_reset(vdbm_reset, dim, 1);
-  vrdbm.constrain_to_valuation();
-  concrete_trace.push_back(vrdbm.get_valuation());
 
-  for (auto n = cex.last(); n != cex.first();) {
-    auto e = cex.incoming_edge(n);
-    auto prev_n = cex.edge_src(e);
-    tchecker::zg::transition_t const & transition = e->transition();
-    bool tgt_delay_allowed = tchecker::ta::delay_allowed(*system, *n->state_ptr()->vloc_ptr());
-    concrete_predecessor(vrdbm, transition, tgt_delay_allowed, prev_n->state_ptr()->zone().dbm(), vrdbm_reset);
-    concrete_trace.push_back(vrdbm_reset.get_valuation());
+  try {
+    vrdbm.constrain_to_valuation();
     concrete_trace.push_back(vrdbm.get_valuation());
-    n = prev_n;
+
+    for (auto n = cex.last(); n != cex.first();) {
+      auto e = cex.incoming_edge(n);
+      auto prev_n = cex.edge_src(e);
+      tchecker::zg::transition_t const & transition = e->transition();
+      bool tgt_delay_allowed = tchecker::ta::delay_allowed(*system, *n->state_ptr()->vloc_ptr());
+      concrete_predecessor(vrdbm, transition, tgt_delay_allowed, prev_n->state_ptr()->zone().dbm(), vrdbm_reset);
+      concrete_trace.push_back(vrdbm_reset.get_valuation());
+      concrete_trace.push_back(vrdbm.get_valuation());
+      n = prev_n;
+    }
+    tchecker::tck_reach::valuation init_val;
+    for(tchecker::clock_id_t x = 1; x < dim; x++){
+      init_val.push_back(0);
+    }
+    concrete_trace.push_back(init_val);
+    std::reverse(concrete_trace.begin(), concrete_trace.end());
+  } catch (tchecker::dbm::overflow & ex) {
+    std::cerr << tchecker::log_warning << "Cannot compute concrete trace: " << ex.what() << "\n";
+    concrete_trace.clear();
   }
-  tchecker::tck_reach::valuation init_val;
-  for(tchecker::clock_id_t x = 1; x < dim; x++){
-    init_val.push_back(0);
-  }
-  concrete_trace.push_back(init_val);
   delete[] vdbm_reset;
   delete[] vdbm;
-  std::reverse(concrete_trace.begin(), concrete_trace.end());
- 
+  
   return concrete_trace;
 }
 
